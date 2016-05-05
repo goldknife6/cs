@@ -3,7 +3,7 @@
 
 void s_free(void *key,void *val)
 {
-	printf("%d\n",(long)val);
+	printf("%ld\n",(long)val);
 }
 
 void testsym()
