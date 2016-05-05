@@ -50,8 +50,6 @@ void csH_tabfree(csH_table tab)
 			last = pos;
 		}
 		if(last) {
-			if (ffp)
-				ffp(last->key,last->value);
 			hlist_del(&last->next);
 			csU_free(last);
 		}

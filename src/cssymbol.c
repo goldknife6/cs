@@ -1,13 +1,20 @@
 #include "cssymbol.h"
 #include "csutil.h"
 #include "cshash.h"
+#include "cslist.h"
 struct s_symbol_ {
 	csG_string name;
 };
 
-struct s_table_ {
+typedef struct s_table_ele {
 	csH_table tab;
-	csS_table top;
+	csL_list next;	
+}s_table_ele;
+
+struct s_table_ {
+	csH_table top;
+	csL_list head;
+	csH_tabfreefp fp;
 };
 
 static csS_symbol symbol(csG_string name) 
@@ -40,30 +47,61 @@ csG_string csS_name(csS_symbol sym)
 
 void csS_insert(csS_table tab, csS_symbol sym, void *value) 
 {
-	VERIFY(tab);VERIFY(tab->tab);
+	VERIFY(tab);VERIFY(tab->top);
 	VERIFY(sym);VERIFY(value);
-	csH_tabinsert(tab->tab, sym, value);
+	csH_tabinsert(tab->top, sym, value);
 }
 
 csS_table csS_empty(csH_tabfreefp fp,csS_table top)
 {
 	VERIFY(fp);
 	csS_table tab  = csU_malloc(sizeof(*tab));
-	tab->tab = csH_tabempty(NULL,NULL,fp);
-	tab->top = top;
+	tab->top = csH_tabempty(NULL,NULL,fp);
+	INIT_LIST_HEAD(&tab->head);
+	tab->fp = fp;
 	return tab;
 }
 
-void *csS_look(csS_table t, csS_symbol sym)
+void *csS_look(csS_table tab, csS_symbol sym)
 {
-	VERIFY(t);VERIFY(sym);
-	VERIFY(t->tab);
-	return csH_tablook(t->tab, sym);
+	VERIFY(tab);
+	VERIFY(sym);
+	VERIFY(tab->top);
+	return csH_tablook(tab->top, sym);
 }
 
-void csS_tabfree(csS_table t)
+void csS_tabfree(csS_table tab)
 {
-	VERIFY(t);
-	VERIFY(t->tab);
-	return csH_tabfree(t->tab);
+	VERIFY(tab);
+	VERIFY(tab->top);
+	VERIFY(list_empty(&tab->head));
+	csH_tabfree(tab->top);
+	csU_free(tab);
 }
+
+void csS_beginscope(csS_table tab)
+{
+	VERIFY(tab);
+	VERIFY(tab->top);
+	VERIFY(tab->fp);
+	s_table_ele *ele  = csU_malloc(sizeof(*ele));
+	ele->tab = tab->top;
+	INIT_LIST_HEAD(&ele->next);
+	tab->top = csH_tabempty(NULL,NULL,tab->fp);
+	list_add(&ele->next,&tab->head);
+}
+
+void csS_endscope(csS_table tab)
+{
+	VERIFY(tab);
+	VERIFY(tab->top);
+	VERIFY(!list_empty(&tab->head));
+	s_table_ele *ele = NULL;
+	ele = list_entry(tab->head.next, s_table_ele, next);
+	VERIFY(ele);
+	VERIFY(ele->tab);
+	csH_tabfree(tab->top);
+	list_del(&ele->next);
+	tab->top = ele->tab;
+	csU_free(ele);
+} 

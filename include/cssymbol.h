@@ -13,4 +13,6 @@ extern void 		csS_insert(csS_table tab, csS_symbol sym, void *value);
 extern csG_string 	csS_name(csS_symbol sym);
 extern csS_symbol 	csS_mksymbol(csG_string name);
 extern void 		csS_tabfree(csS_table t);
+extern void 		csS_beginscope(csS_table tab);
+extern void 		csS_endscope(csS_table tab);
 #endif/*!CS_SYMBOL_H*/
