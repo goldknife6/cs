@@ -1,20 +1,20 @@
 # c-short
- 1. *program* → *decList* | **ε**
- 2. *decList* → *decList* *dec* | *dec*
+ 1. *program* → *declist* | **ε**
+ 2. *declist* → *declist* *dec* | *dec*
  3. *dec* → *vardec* | *funcdec*
  4. *vardec* → **var** *type-id* *vardecid* [= *simpleexpr*] **;**
  7. *vardecid* → **ID** | **ID** **[** NUMCONST **]**
- 9. *funcdec* → **def**  **ID** **(** *params* **)** *type-id* **{** *locVarDecList* *stmtlist* **}**
+ 9. *funcdec* → **def**  **ID** **(** *params* **)** *type-id* **{** *locvardecList* *stmtlist* **}**
  10. *params* → *paramlist*  | **ε**
  11. *paramlist* → *paramlist* **,** *paramtypelist* | *paramtypelist*
  12. *paramtypelist* → *type-id* *paramId*
  13. *paramid* → **ID** 
  14. *stmt* → *exprstmt* |  *compoundstmt*  | *ifstmt* | *whilestmt* | *forstmt* | *returnstmt* | *breakstmt*
- 15. *compoundstmt*→ **{** *locVarDecList* *stmtlist* **}**
- 16. *locVarDecList → locVarDecList LocVarDec* | *LocVarDec* 
- 17. *LocVarDec* → **var** *type-id* *varDeclId* [= *simpleExpression*] **;**
- 20. *stmtlist → stmtlist statement* | **ε** 
- 21. *expressionStmt* → *exprlist* **;** | **;** 
+ 15. *compoundstmt*→ **{** *locvardecList* *stmtlist* **}**
+ 16. *locvardecList → locvardecList locvardec* | *locvardec* 
+ 17. *locvardec* → **var** *type-id* *varDeclId* [= *simpleexpr*] **;**
+ 20. *stmtlist → stmtlist stmt* | **ε** 
+ 21. *exprstmt* → *exprlist* **;** | **;** 
  22. *ifstmt* → **if** **(** *exprlist* **)** *stmt* **[** **else** *stmt* **]**
  23. *whilestmt* → **while** **(** *exprlist* **)** *stmt*
  24. *forstmt* → **for** **(** *exprlist* **;** *exprlist* **;** *exprlist* **)** *stmt*
@@ -35,6 +35,6 @@
  36. *unaryexpr* → * **−** unaryexpr* | *factor*
  38. *factor* → *immutable* | *mutables*
  39. *mutable* → **ID**
- 40. *immutable* → **(** *expr* **)** | *call* | NUMCONST | CHARCONST | STRINGCONST | **true** | **false**
+ 40. *immutable* → **(** *expr* | **ε** **)** | *call* | NUMCONST | CHARCONST | STRINGCONST | **true** | **false**
  41. *call* → **[** *arglist* **]** **ID** 
  43. *arglist → arglist*  **','**  *expr* | *expr*
