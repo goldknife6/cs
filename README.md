@@ -12,7 +12,7 @@
  14. *stmt* → *exprstmt* |  *compoundstmt*  | *ifstmt* | *whilestmt* | *forstmt* | *returnstmt* | *breakstmt*
  15. *compoundstmt*→ **{** *locvardecList* *stmtlist* **}**
  16. *locvardecList → locvardecList locvardec* | *locvardec* 
- 17. *locvardec* → **var** *type-id* *varDeclId* [= *simpleexpr*] **;**
+ 17. *locvardec* → **var** *type-id* *vardecid* [= *simpleexpr*] **;**
  20. *stmtlist → stmtlist stmt* | **ε** 
  21. *exprstmt* → *exprlist* **;** | **;** 
  22. *ifstmt* → **if** **(** *exprlist* **)** *stmt* **[** **else** *stmt* **]**
