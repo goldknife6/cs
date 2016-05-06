@@ -5,14 +5,14 @@
 static csL_token token;
 
 static csG_bool 		match(csL_tokkind expected,char *msg);
-static csA_declist 		p_declist_();
-static csA_dec 			p_dec_();
-static csA_paramlist 	p_paramlist_();
-static csA_param		p_param_();
-static csA_mutable 		p_mutable_();
-static csA_immutable 	p_immutable_();
-static csA_factor 		p_factor_();
-
+static csA_declist 		p_declist_(void);
+static csA_dec 			p_dec_(void);
+static csA_paramlist 	p_paramlist_(void);
+static csA_param		p_param_(void);
+static csA_mutable 		p_mutable_(void);
+static csA_immutable 	p_immutable_(void);
+static csA_factor 		p_factor_(void);
+static csA_uexpr 		p_unaryexpr_(void);
 #define MATCH(tok,msg,lab) ({if (!match(tok,msg)) goto lab;})
 
 static csG_bool match(csL_tokkind expected,char *msg)
@@ -30,13 +30,13 @@ static csG_bool match(csL_tokkind expected,char *msg)
 	}
 }
 
-csA_declist parser()
+csA_declist parser(void)
 {
 	token = csL_gettoken();
 	return p_declist_();
 }
 
-static csA_declist p_declist_()
+static csA_declist p_declist_(void)
 {
 	csA_declist foo = NULL;
 	csA_dec bar = NULL;
@@ -58,7 +58,7 @@ loop:
 	return foo;
 }
 
-static csA_dec p_dec_()
+static csA_dec p_dec_(void)
 {
 	csA_dec foo = csA_mkdec();
 	csG_pos pos = token.pos;
@@ -108,7 +108,7 @@ sync:
 	VERIFY(0);
 }
 
-static csA_paramlist p_paramlist_()
+static csA_paramlist p_paramlist_(void)
 {
 	csA_paramlist foo = NULL;
 	csA_param bar = NULL;
@@ -139,7 +139,7 @@ sync:
 	VERIFY(0);
 }
 
-static csA_param p_param_()
+static csA_param p_param_(void)
 {
 	csA_param foo = csA_mkparam();
 	if (token.kind == csL_ID) {
@@ -157,7 +157,7 @@ sync:
 	VERIFY(0);
 }
 
-static csA_mutable p_mutable_()
+static csA_mutable p_mutable_(void)
 {
 	csA_mutable foo = NULL;
 	if (token.kind == csL_ID) {
@@ -171,7 +171,7 @@ sync:
 	VERIFY(0);
 }
 
-static csA_immutable p_immutable_()
+static csA_immutable p_immutable_(void)
 {
 	csA_immutable foo = csA_mkimmut();
 	switch (token.kind) {
@@ -206,7 +206,7 @@ sync:
 	VERIFY(0);
 }
 
-static csA_factor p_factor_()
+static csA_factor p_factor_(void)
 {
 	csA_factor foo = csA_mkfactor();
 	csA_mutable mut = NULL;
@@ -232,3 +232,17 @@ sync:
 	VERIFY(0);
 }
 
+static csA_uexpr p_unaryexpr_(void)
+{
+	csA_uexpr foo = csA_mkuexpr();
+	if (token.kind == csL_NOT) {
+		MATCH(csL_NOT,"missing !",sync);
+		foo->flags = TRUE;
+	}
+	csA_factor fac = p_factor_();
+	VERIFY(fac);
+	csA_setuexpr(foo,fac);
+	return foo;
+sync:
+	VERIFY(0);
+}

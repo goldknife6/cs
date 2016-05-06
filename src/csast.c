@@ -281,3 +281,30 @@ csS_symbol csA_mutid(csA_mutable foo)
 }
 
 /**************************************************************/
+csG_pos csA_uexprpos(csA_uexpr foo)
+{
+	VERIFY(foo);
+	return foo->pos;
+}
+void csA_setuexprpos(csA_uexpr foo,csG_pos pos)
+{
+	VERIFY(foo);
+	foo->pos = pos;
+}
+csA_uexpr csA_mkuexpr()
+{
+	csA_uexpr foo = csU_malloc(sizeof(*foo));
+	foo->flags = FALSE;
+	return foo;
+}
+void csA_setuexpr(csA_uexpr foo,csA_factor factor)
+{
+	VERIFY(foo);VERIFY(factor);
+	foo->factor = factor;
+}
+csA_factor csA_uexprfac(csA_uexpr foo)
+{
+	VERIFY(foo);
+	return foo->factor;
+}
+/**************************************************************/

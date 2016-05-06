@@ -16,7 +16,7 @@ typedef struct a_factor_ *csA_factor;
 typedef struct a_mutable_ *csA_mutable;
 typedef struct a_immutable_ *csA_immutable;
 typedef csL_list *csA_arglist;
-typedef struct a_uexpr_ *csA_uexpr;
+typedef struct a_unaryexpr_ *csA_uexpr;
 
 struct a_dec_ {
 	enum {
@@ -93,6 +93,11 @@ struct a_unaryexpr_ {
 	csG_pos pos;
 };
 extern csG_pos csA_uexprpos(csA_uexpr foo);
+extern void csA_setuexprpos(csA_uexpr foo,csG_pos pos);
+extern csA_uexpr csA_mkuexpr();
+extern void csA_setuexpr(csA_uexpr foo,csA_factor factor);
+extern csA_factor csA_uexprfac(csA_uexpr foo);
+
 
 struct a_factor_ {
 	enum {csA_immut,csA_mut} kind;
