@@ -1,4 +1,6 @@
 #include "cstype.h"
+#include "cslist.h"
+#include "cssymbol.h"
 
 struct t_type_ {
 	enum {
@@ -6,8 +8,21 @@ struct t_type_ {
 		csT_array,csT_bool, csT_void
 	} kind;
 	union {
-		//CSfieldList record;
-		//CStype array;
-		//struct {CSsymSymbol sym; CStype type;} name;
+		csT_fieldlist record;
+		csT_type array;
+		struct {
+			csS_symbol name; 
+			csT_type type;
+		} name;
 	} u;
+};
+
+struct t_field_ {
+	csS_symbol name; 
+	csT_type type;
+	csL_list next;
+};
+
+struct t_fieldlist_ {
+	csL_list head;
 };

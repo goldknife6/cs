@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
 
 	//testhash();
 	//testlex();
-	testsym();
+	//testsym();
 	return 0;
 }
 
