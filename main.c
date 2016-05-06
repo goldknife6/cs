@@ -8,9 +8,12 @@ FILE *errors;	//error stream
 FILE *debugs;	//debug stream
 csG_string filename;
 
-void testhash();
-void testlex();
-void testsym();
+void testhash(void);
+void testlex(void);
+void testsym(void);
+void testparser(void);
+
+csG_bool csG_error = FALSE;
 int main(int argc, char *argv[])
 {
 	outs = stdout;
@@ -29,6 +32,7 @@ int main(int argc, char *argv[])
 	//testhash();
 	//testlex();
 	//testsym();
+	testparser();
 	return 0;
 }
 

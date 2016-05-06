@@ -1,6 +1,7 @@
 #ifndef CS_UTIL_H
 #define CS_UTIL_H
 #include "csglobal.h"
+extern void csU_emsg(char *message,...);
 extern void *		csU_malloc(size_t len);
 extern void 		csU_free(void *p);
 extern csG_string 	csU_strdup(char *s);

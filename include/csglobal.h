@@ -31,6 +31,7 @@ typedef struct {
 	int col;
 } csG_pos;
 
+extern csG_bool csG_error;
 
 extern void emitError(char *message,...);
 #endif/*!CS_GLOBAL_H*/

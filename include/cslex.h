@@ -27,4 +27,5 @@ typedef struct {
 
 extern csL_token csL_gettoken();
 extern void csL_prttoken(csL_token token);
+extern csG_string csL_tokenstr(csL_token token);
 #endif/*!CS_LEX_H*/

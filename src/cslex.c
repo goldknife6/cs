@@ -295,3 +295,15 @@ void csL_prttoken(csL_token token)
 		fprintf(debugs,"%d ",kind);
 	}
 }
+
+csG_string csL_tokenstr(csL_token token)
+{
+	switch(token.kind) {
+	case csL_ID:
+	case csL_STRING:
+		VERIFY(token.u.sval);
+		return token.u.sval;
+	default:
+		VERIFY(0);
+	}
+}
