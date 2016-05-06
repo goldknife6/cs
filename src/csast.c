@@ -143,7 +143,41 @@ csA_simpleexpr csA_mksimpleexpr()
 	return foo;
 }
 /**************************************************************/
-
+csG_pos csA_factorpos(csA_factor foo)
+{
+	VERIFY(foo);
+	return foo->pos;
+}
+csA_factor csA_mkfactor()
+{
+	csA_factor foo = csU_malloc(sizeof(*foo));
+	return foo;
+}
+void csA_setfactormut(csA_factor foo,csA_mutable mut)
+{
+	VERIFY(foo);VERIFY(mut);
+	foo->kind = csA_mut;
+	foo->u.mut = mut;
+}
+void csA_setfactorimmut(csA_factor foo,csA_immutable immut)
+{
+	VERIFY(foo);VERIFY(immut);
+	foo->kind = csA_immut;
+	foo->u.immut = immut;
+}
+csA_mutable csA_factormut(csA_factor foo)
+{
+	VERIFY(foo);
+	VERIFY(foo->kind == csA_mut);
+	return foo->u.mut;
+}
+csA_immutable csA_factorimmut(csA_factor foo)
+{
+	VERIFY(foo);
+	VERIFY(foo->kind == csA_immut);
+	return foo->u.immut;
+}
+/**************************************************************/
 csS_symbol csA_immutcallid(csA_immutable foo)
 {
 	VERIFY(foo->kind == csA_call);

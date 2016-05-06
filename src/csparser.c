@@ -11,9 +11,24 @@ static csA_paramlist 	p_paramlist_();
 static csA_param		p_param_();
 static csA_mutable 		p_mutable_();
 static csA_immutable 	p_immutable_();
-
+static csA_factor 		p_factor_();
 
 #define MATCH(tok,msg,lab) ({if (!match(tok,msg)) goto lab;})
+
+static csG_bool match(csL_tokkind expected,char *msg)
+{ 
+	VERIFY(msg);
+	if (token.kind == expected) {
+		token = csL_gettoken();
+		return TRUE;
+	} else {
+		csG_pos pos = token.pos;
+		csU_emsg("%d:%d:%s\n",pos.row,pos.col,msg);	
+		token = csL_gettoken();
+		csG_error = TRUE;
+		return FALSE;
+	}
+}
 
 csA_declist parser()
 {
@@ -193,17 +208,29 @@ sync:
 	VERIFY(0);
 }
 
-static csG_bool match(csL_tokkind expected,char *msg)
-{ 
-	VERIFY(msg);
-	if (token.kind == expected) {
-		token = csL_gettoken();
-		return TRUE;
-	} else {
-		csG_pos pos = token.pos;
-		csU_emsg("%d:%d:%s\n",pos.row,pos.col,msg);	
-		token = csL_gettoken();
-		csG_error = TRUE;
-		return FALSE;
+static csA_factor p_factor_()
+{
+	csA_factor foo = csA_mkfactor();
+	csA_mutable mut = NULL;
+	csA_immutable immut = NULL;
+	switch (token.kind) {
+	case csL_ID:
+		mut = p_mutable_();
+		VERIFY(mut);
+		csA_setfactormut(foo,mut);
+		break;
+	case csL_LPAREN:case csL_LBRACK:
+	case csL_NUM:case csL_CHAR:case csL_STRING:
+	case csL_TRUE:case csL_FALSE:
+		immut = p_immutable_();
+		VERIFY(immut);
+		csA_setfactorimmut(foo,immut);
+		break;
+	default:
+		VERIFY(0);
 	}
+	return foo;
+sync:
+	VERIFY(0);
 }
+

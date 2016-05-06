@@ -96,12 +96,13 @@ struct a_factor_ {
 		csA_immutable immut;
 		csA_mutable mut;
 	} u;
-};/*
+};
 extern csG_pos csA_factorpos(csA_factor foo);
-extern csA_factor csA_mkmut();
-extern void csA_setmutid(csA_factor foo,csS_symbol id);
-extern csS_symbol csA_mutid(csA_factor foo);
-*/
+extern csA_factor csA_mkfactor();
+extern void csA_setfactormut(csA_factor foo,csA_mutable mut);
+extern void csA_setfactorimmut(csA_factor foo,csA_immutable immut);
+extern csA_mutable csA_factormut(csA_factor foo);
+extern csA_immutable csA_factorimmut(csA_factor foo);
 
 
 struct a_mutable_ {
