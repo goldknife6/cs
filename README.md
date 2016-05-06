@@ -30,7 +30,7 @@
  33. *sumop* → **+** | **−**
  34. *term → term mulop unaryexpr* | *unaryexpr*
  35. *mulop* → **'*'** | **/** | **%**
- 36. *unaryexpr* → * **−** unaryexpr* | *factor*
+ 36. *unaryexpr* → [**−**] *factor*
  38. *factor* → *immutable* | *mutables*
  39. *mutable* → **ID**
  40. *immutable* → **(** *expr* | **ε** **)** | *call* | NUMCONST | CHARCONST | STRINGCONST | **true** | **false**
