@@ -65,7 +65,6 @@ static csA_dec p_dec_()
 	if (token.kind == csL_VAR) {
 		//enter variable declaration
 		MATCH(csL_VAR,"missing var",sync);
-		foo->kind = csA_vardec;
 		if (token.kind == csL_ID) {		//eat type-id
 			csG_string name = csL_tokenstr(token);
 			csA_setdecvartype(foo,csS_mksymbol(name));
@@ -85,7 +84,6 @@ static csA_dec p_dec_()
 		MATCH(csL_SEMICOLON,"missing ;",sync);
 	} else if (token.kind == csL_DEF) {
 		MATCH(csL_DEF,"missing def",sync);
-		foo->kind = csA_fundec;
 		if (token.kind == csL_ID) {
 			csG_string name = csL_tokenstr(token);
 			csA_setdecfunname(foo,csS_mksymbol(name));

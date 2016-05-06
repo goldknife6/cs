@@ -20,6 +20,7 @@ csA_dec csA_mkdec(void)
 void csA_setdecvartype(csA_dec foo,csS_symbol type)
 {
 	VERIFY(foo);VERIFY(type);
+	foo->kind = csA_vardec;
 	foo->u.vardec.type = type;
 }
 
@@ -32,6 +33,7 @@ csS_symbol csA_decvartype(csA_dec foo)
 void csA_setdecvarname(csA_dec foo,csS_symbol name)
 {
 	VERIFY(foo);VERIFY(name);
+	foo->kind = csA_vardec;
 	foo->u.vardec.name = name;
 }
 
@@ -44,12 +46,14 @@ csS_symbol csA_decvarname(csA_dec foo)
 void csA_setdecfunname(csA_dec foo,csS_symbol name)
 {
 	VERIFY(foo);VERIFY(name);
+	foo->kind = csA_fundec;
 	foo->u.fundec.name = name;
 }
 
 void csA_setdecfunrestype(csA_dec foo,csS_symbol restype)
 {
 	VERIFY(foo);VERIFY(restype);
+	foo->kind = csA_fundec;
 	foo->u.fundec.restype = restype;
 }
 

@@ -16,6 +16,7 @@ typedef struct a_factor_ *csA_factor;
 typedef struct a_mutable_ *csA_mutable;
 typedef struct a_immutable_ *csA_immutable;
 typedef csL_list *csA_arglist;
+typedef struct a_uexpr_ *csA_uexpr;
 
 struct a_dec_ {
 	enum {
@@ -85,9 +86,13 @@ extern csA_urelexpr csA_mkurelexpr();
 struct sumExpr { CSastTerm term; CSastOp op; CSastSumExpr sum;}; 
 
 struct term {CSastTerm term;CSastOp op;CSastUnExpr uexpr;}; 
-
-struct unaryExpr {CSastOp op;CSastFactor factor;};
 */
+struct a_unaryexpr_ {
+	csG_bool flags;
+	csA_factor factor;
+	csG_pos pos;
+};
+extern csG_pos csA_uexprpos(csA_uexpr foo);
 
 struct a_factor_ {
 	enum {csA_immut,csA_mut} kind;
