@@ -4,11 +4,9 @@
  3. *dec* → *vardec* | *funcdec*
  4. *vardec* → **var** *type-id* *vardecid* [= *simpleexpr*] **;**
  7. *vardecid* → **ID** | **ID** **[** NUMCONST **]**
- 9. *funcdec* → **def**  **ID** **(** *params* **)** *type-id* **{** *locvardecList* *stmtlist* **}**
- 10. *params* → *paramlist*  | **ε**
- 11. *paramlist* → *paramlist* **,** *paramtypelist* | *paramtypelist*
- 12. *paramtypelist* → *type-id* *paramId*
- 13. *paramid* → **ID** 
+ 9. *funcdec* → **def**  **ID** **(** *paramlist*| **ε** **)** *type-id* **{** *locvardecList* *stmtlist* **}**
+ 11. *paramlist* → *paramlist* **,** *paramt* | *paramt*
+ 12. *paramt* → *type-id* **ID** 
  14. *stmt* → *exprstmt* |  *compoundstmt*  | *ifstmt* | *whilestmt* | *forstmt* | *returnstmt* | *breakstmt*
  15. *compoundstmt*→ **{** *locvardecList* *stmtlist* **}**
  16. *locvardecList → locvardecList locvardec* | *locvardec* 

@@ -7,6 +7,9 @@ static csL_token token;
 static csG_bool 		match(csL_tokkind expected,char *msg);
 static csA_declist 		p_declist_();
 static csA_dec 			p_dec_();
+static csA_paramlist 	p_paramlist_();
+static csA_param		p_param_();
+
 
 #define MATCH(tok,msg,lab) ({if (!match(tok,msg)) goto lab;})
 
@@ -71,7 +74,69 @@ static csA_dec p_dec_()
 			csA_setdecfunname(foo,csS_mksymbol(name));
 		}
 		MATCH(csL_ID,"missing function id",sync);
+		MATCH(csL_LPAREN,"missing (",sync);
+		csA_paramlist p = p_paramlist_();
+		
+		csA_setdecfunparamlist(foo,p);
+		//SET_FUNDEC_RESID(foo,CSSymbol(token.u.sval));
+		MATCH(csL_RPAREN,"missing )",sync);
+		if (token.kind == csL_ID) {
+			csG_string name = csL_tokenstr(token);
+			csA_setdecfunrestype(foo,csS_mksymbol(name));
+		}
+		MATCH(csL_ID,"missing type-id",sync);
+		MATCH(csL_LBRACE,"missing {",sync);
+		MATCH(csL_RBRACE,"missing }",sync);
 	}
+	return foo;
+sync:
+	VERIFY(0);
+}
+
+static csA_paramlist p_paramlist_()
+{
+	csA_paramlist foo = NULL;
+	csA_param bar = NULL;
+loop:
+	switch (token.kind) {
+	case csL_ID:
+		bar = p_param_();
+		if (bar) {
+			if (!foo) foo = csA_mkparamlist();
+			csA_paramlistadd(foo,bar);
+			if (token.kind == csL_COMMA) {
+				MATCH(csL_COMMA,"missing ,",sync);
+				if (token.kind != csL_ID)
+					goto sync;
+				goto loop;
+			}
+		} else {
+			VERIFY(0);
+		}
+		break;
+	case csL_RPAREN:
+		break;
+	default:
+		VERIFY(0);
+	}
+	return foo;
+sync:
+	VERIFY(0);
+}
+
+static csA_param p_param_()
+{
+	csA_param foo = csA_mkparam();
+	if (token.kind == csL_ID) {
+		csG_string name = csL_tokenstr(token);
+		csA_setparamtype(foo,csS_mksymbol(name));
+	}
+	MATCH(csL_ID,"missing type-id",sync);
+	if (token.kind == csL_ID) {
+		csG_string name = csL_tokenstr(token);
+		csA_setparamname(foo,csS_mksymbol(name));
+	}
+	MATCH(csL_ID,"missing id",sync);
 	return foo;
 sync:
 	VERIFY(0);

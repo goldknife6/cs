@@ -3,6 +3,8 @@
 
 static void p_declist(csA_declist dec);
 static void p_dec(csA_dec dec);
+static void p_paramlist(csA_paramlist list);
+static void p_param(csA_param p);
 
 void testparser(void)
 {
@@ -25,8 +27,9 @@ static void p_declist(csA_declist dec)
 static void p_dec(csA_dec dec)
 {
 	csS_symbol s = NULL;
+	csA_paramlist p = NULL;
 	if (!dec) return;
-	csG_pos p = csA_decpos(dec);
+	csG_pos pos = csA_decpos(dec);
 	switch (dec->kind) {
 	case csA_vardec:
 		s = csA_decvartype(dec);
@@ -37,9 +40,40 @@ static void p_dec(csA_dec dec)
 		fprintf(debugs, "%s ;\n", csS_name(s));
 		break;
 	case csA_fundec:
-		VERIFY(0);
+		s = csA_decfunname(dec);
+		VERIFY(s);
+		fprintf(debugs, "def %s ", csS_name(s));
+		s = csA_decfunrestype(dec);
+		VERIFY(s);
+		fprintf(debugs, "(");
+		p = csA_decfunparamlist(dec);
+		p_paramlist(p);
+		fprintf(debugs, ")");
+		fprintf(debugs, " %s\n", csS_name(s));
 		break;
 	default:
 		VERIFY(0);
 	}	
+}
+
+static void p_paramlist(csA_paramlist list)
+{
+	if (!list) return;
+	csA_param pos = NULL;
+	char *s = "";
+	list_for_each_entry(pos, list, next) {
+		fprintf(debugs,"%s", s);
+		p_param(pos);
+		s = ",";
+	}
+}
+
+static void p_param(csA_param foo)
+{
+	VERIFY(foo);
+	csS_symbol s1 = csA_paramtype(foo);
+	csS_symbol s2 = csA_paramname(foo);
+	VERIFY(s1);
+	VERIFY(s2);
+	fprintf(debugs, "%s %s",csS_name(s1),csS_name(s2));
 }

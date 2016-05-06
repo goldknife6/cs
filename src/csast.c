@@ -63,6 +63,18 @@ csS_symbol csA_decfunname(csA_dec foo)
 	VERIFY(foo);
 	return foo->u.fundec.name;
 }
+
+void csA_setdecfunparamlist(csA_dec foo,csA_paramlist list)
+{
+	VERIFY(foo);
+	foo->u.fundec.list = list;
+}
+
+csA_paramlist csA_decfunparamlist(csA_dec foo)
+{
+	VERIFY(foo);
+	return foo->u.fundec.list;
+}
 /**************************************************************/
 
 csA_declist csA_mkdeclist(void)
@@ -71,11 +83,55 @@ csA_declist csA_mkdeclist(void)
 	INIT_LIST_HEAD(foo);
 	return foo;
 }
+
 void csA_declistadd(csA_declist foo,csA_dec bar)
 {
 	VERIFY(foo);VERIFY(bar);
-	list_add(&bar->next, foo);
+	list_add_tail(&bar->next, foo);
 }
 
 
 /**************************************************************/
+csA_param csA_mkparam()
+{
+	csA_param foo = csU_malloc(sizeof(*foo));
+	return foo;
+}
+
+csS_symbol csA_paramtype(csA_param foo)
+{
+	VERIFY(foo);
+	return foo->type;
+}
+
+csS_symbol csA_paramname(csA_param foo)
+{
+	VERIFY(foo);
+	return foo->name;
+}
+
+void csA_setparamname(csA_param foo,csS_symbol name)
+{
+	VERIFY(foo);VERIFY(name);
+	foo->name = name;
+}
+
+void csA_setparamtype(csA_param foo,csS_symbol type)
+{
+	VERIFY(foo);VERIFY(type);
+	foo->type = type;
+}
+
+csA_paramlist csA_mkparamlist(void)
+{
+	csA_paramlist foo = csU_malloc(sizeof(*foo));
+	INIT_LIST_HEAD(foo);
+	return foo;
+}
+
+
+void csA_paramlistadd(csA_paramlist foo,csA_param bar)
+{
+	VERIFY(foo);VERIFY(bar);
+	list_add_tail(&bar->next, foo);
+}
