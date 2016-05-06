@@ -308,3 +308,78 @@ csA_factor csA_uexprfac(csA_uexpr foo)
 	return foo->factor;
 }
 /**************************************************************/
+csA_termlist csA_mktermlist(void)
+{
+	csA_termlist foo = csU_malloc(sizeof(*foo));
+	INIT_LIST_HEAD(foo);
+	return foo;
+}
+void csA_termlistadd(csA_termlist foo,csA_term bar)
+{
+	VERIFY(foo);VERIFY(bar);
+	list_add_tail(&bar->next, foo);
+}
+csG_pos csA_termpos(csA_term foo)
+{
+	VERIFY(foo);
+	return foo->pos;
+}
+void csA_settermpos(csA_term foo,csG_pos pos)
+{
+	VERIFY(foo);
+	foo->pos = pos;
+}
+csA_term csA_mkterm()
+{
+	csA_term foo = csU_malloc(sizeof(*foo));
+	INIT_LIST_HEAD(&foo->next);
+	return foo;
+}
+void csA_settermuexpr(csA_term foo,csA_uexpr uexpr)
+{
+	VERIFY(foo);
+	foo->uexpr = uexpr;
+}
+csA_uexpr csA_termuexpr(csA_term foo)
+{
+	VERIFY(foo);
+	return foo->uexpr;
+}
+void csA_settermop(csA_term foo,csA_op op)
+{
+	VERIFY(foo);VERIFY(op);
+}
+csA_op csA_termop(csA_term foo)
+{
+	VERIFY(foo);
+	return foo->op;
+}
+
+/**************************************************************/
+csG_pos csA_urelexprpos(csA_urelexpr foo)
+{
+	VERIFY(foo);
+	return foo->pos;
+}
+void csA_seturelexprpos(csA_urelexpr foo,csG_pos pos)
+{
+	VERIFY(foo);
+	foo->pos = pos;
+}
+csA_urelexpr csA_mkurelexpr()
+{
+	csA_urelexpr foo = csU_malloc(sizeof(*foo));
+	foo->flags = FALSE;
+	return foo;
+}
+csA_relexpr csA_urelexprrel(csA_urelexpr foo)
+{
+	VERIFY(foo);
+	return foo->rel;
+}
+void csA_seturelexprrel(csA_urelexpr foo,csA_relexpr rel)
+{
+	VERIFY(foo);VERIFY(rel);
+	foo->rel = rel;
+}
+/**************************************************************/

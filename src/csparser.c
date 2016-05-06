@@ -13,6 +13,11 @@ static csA_mutable 		p_mutable_(void);
 static csA_immutable 	p_immutable_(void);
 static csA_factor 		p_factor_(void);
 static csA_uexpr 		p_unaryexpr_(void);
+static csA_term 		p_term_(void);
+static csA_termlist 	p_termlist_(void);
+static csA_urelexpr 	p_urelexpr_(void);
+static csA_relexpr 		p_relexpr_(void);
+
 #define MATCH(tok,msg,lab) ({if (!match(tok,msg)) goto lab;})
 
 static csG_bool match(csL_tokkind expected,char *msg)
@@ -235,8 +240,8 @@ sync:
 static csA_uexpr p_unaryexpr_(void)
 {
 	csA_uexpr foo = csA_mkuexpr();
-	if (token.kind == csL_NOT) {
-		MATCH(csL_NOT,"missing !",sync);
+	if (token.kind == csL_MINUS) {
+		MATCH(csL_MINUS,"missing -",sync);
 		foo->flags = TRUE;
 	}
 	csA_factor fac = p_factor_();
@@ -245,4 +250,64 @@ static csA_uexpr p_unaryexpr_(void)
 	return foo;
 sync:
 	VERIFY(0);
+}
+
+static csA_term p_term_(void)
+{
+	csA_term foo = csA_mkterm();
+	csA_uexpr bar = p_unaryexpr_();
+	VERIFY(bar);
+	csA_settermuexpr(foo,bar);
+	return foo;
+sync:
+	VERIFY(0);
+}
+
+static csA_termlist p_termlist_(void)
+{
+	csA_termlist foo = NULL;
+	csA_term bar = NULL;
+loop:
+	switch (token.kind) {
+	case csL_MINUS:case csL_LPAREN:case csL_LBRACK:
+	case csL_NUM:case csL_CHAR:case csL_STRING:
+	case csL_TRUE:case csL_FALSE:case csL_ID:
+		if (!foo) foo = csA_mktermlist();
+		bar = p_term_();
+		VERIFY(bar);
+		csA_termlistadd(foo,bar);
+		switch (token.kind) {
+		case csL_TIMES:	
+			csA_settermop(bar,csA_times);
+			break;
+		case csL_DIVIDE:
+			csA_settermop(bar,csA_divide);
+			break;
+		default:
+			return foo;
+		}
+		goto loop;
+		break;
+	}
+	return foo;
+sync:
+	VERIFY(0);
+}
+
+static csA_urelexpr p_urelexpr_(void)
+{
+	csA_urelexpr foo = csA_mkurelexpr();
+	csA_relexpr bar = NULL;
+	if(token.kind == csL_NOT) {
+		MATCH(csL_NOT,"missing !",sync);
+		foo->flags = TRUE;
+	}
+	bar;
+sync:
+	VERIFY(0);
+}
+
+static csA_relexpr p_relexpr_(void)
+{
+
 }
