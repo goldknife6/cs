@@ -9,6 +9,8 @@ static csA_declist 		p_declist_();
 static csA_dec 			p_dec_();
 static csA_paramlist 	p_paramlist_();
 static csA_param		p_param_();
+static csA_mutable 		p_mutable_();
+static csA_immutable 	p_immutable_();
 
 
 #define MATCH(tok,msg,lab) ({if (!match(tok,msg)) goto lab;})
@@ -137,6 +139,55 @@ static csA_param p_param_()
 		csA_setparamname(foo,csS_mksymbol(name));
 	}
 	MATCH(csL_ID,"missing id",sync);
+	return foo;
+sync:
+	VERIFY(0);
+}
+
+static csA_mutable p_mutable_()
+{
+	csA_mutable foo = NULL;
+	if (token.kind == csL_ID) {
+		foo = csA_mkmut();
+		csG_string name = csL_tokenstr(token);
+		csA_setmutid(foo,csS_mksymbol(name));
+	}
+	MATCH(csL_ID,"missing mutable",sync);
+	return foo;
+sync:
+	VERIFY(0);
+}
+
+static csA_immutable p_immutable_()
+{
+	csA_immutable foo = csA_mkimmut();
+	switch (token.kind) {
+	case csL_NUM:
+		csA_setimmutnum(foo,csL_tokennum(token));
+		MATCH(csL_NUM,"missing numconst",sync);
+		break;
+	case csL_CHAR:
+		csA_setimmutchar(foo,csL_tokenchar(token));
+		MATCH(csL_CHAR,"missing charconst",sync);
+		break;
+	case csL_STRING:
+		csA_setimmutstr(foo,csL_tokenstr(token));
+		MATCH(csL_STRING,"missing strconst",sync);
+		break;
+	case csL_TRUE:
+		csA_setimmutbool(foo,csL_tokenbool(token));
+		MATCH(csL_TRUE,"missing boolconst",sync);
+		break;
+	case csL_FALSE:
+		csA_setimmutbool(foo,csL_tokenbool(token));
+		MATCH(csL_FALSE,"missing boolconst",sync);
+		break;
+	case csL_LBRACK://function call
+		VERIFY(0);
+		break;
+	default:
+		VERIFY(0);
+	}
 	return foo;
 sync:
 	VERIFY(0);

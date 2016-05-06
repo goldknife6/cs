@@ -307,3 +307,34 @@ csG_string csL_tokenstr(csL_token token)
 		VERIFY(0);
 	}
 }
+
+int csL_tokenchar(csL_token token)
+{
+	switch(token.kind) {
+	case csL_CHAR:
+		return token.u.cval;
+	default:
+		VERIFY(0);
+	}
+}
+
+int csL_tokennum(csL_token token)
+{
+	switch(token.kind) {
+	case csL_NUM:
+		return token.u.ival;
+	default:
+		VERIFY(0);
+	}
+}
+
+csG_bool csL_tokenbool(csL_token token)
+{
+	switch(token.kind) {
+	case csL_FALSE:
+	case csL_TRUE:
+		return token.u.bval;
+	default:
+		VERIFY(0);
+	}
+}
