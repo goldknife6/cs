@@ -15,7 +15,7 @@ FILES 		= cslex.o cshash.o csutil.o cssymbol.o cstype.o csenv.o cstemp.o  cspars
 OBJFILES 	= $(patsubst %.o,$(OBJDIR)/%.o,$(FILES))
 DEPS 		= $(patsubst %.o,%.d,$(OBJFILES))
 
-TESTFILE	= hash.o lex.o sym.o parser.o
+TESTFILE	= hash.o lex.o sym.o parser.o code.o
 TESTOBJFILES= $(patsubst %.o,$(OBJDIR)/%.o,$(TESTFILE))
 TESTDEPS 	= $(patsubst %.o,%.d,$(TESTOBJFILES))
 

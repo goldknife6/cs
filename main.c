@@ -12,6 +12,7 @@ void testhash(void);
 void testlex(void);
 void testsym(void);
 void testparser(void);
+void testcode(void);
 
 csG_bool csG_error = FALSE;
 int main(int argc, char *argv[])
@@ -32,7 +33,8 @@ int main(int argc, char *argv[])
 	//testhash();
 	//testlex();
 	//testsym();
-	testparser();
+	//testparser();
+	testcode();
 	return 0;
 }
 

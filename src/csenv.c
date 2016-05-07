@@ -40,4 +40,32 @@ csE_enventry csE_funentry(csT_typelist formals,csT_type res,csS_symbol name)
 	foo->u.fun.formals = formals;
 	foo->name = name;
 }
-
+/*
+struct e_env_ {
+	enum {
+		csE_var,csE_fun
+	} kind;
+	csS_symbol name;
+	union {
+		struct {
+			csT_type type;
+			csF_access access;
+		} var;
+		struct {
+			csT_typelist formals;
+			csT_type res;
+			//csF_frame frame;
+		} fun;
+	} u;
+};
+*/
+csT_type csE_varty(csE_enventry foo)
+{
+	VERIFY(foo);
+	return foo->u.var.type;
+}
+csF_access csE_varaccess(csE_enventry foo)
+{
+	VERIFY(foo);
+	return foo->u.var.access;
+}
