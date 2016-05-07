@@ -20,6 +20,8 @@ static void p_termlist_(csA_termlist list);
 static void p_uexpr_(csA_uexpr foo);
 static void p_factor_(csA_factor foo);
 static void p_op_(csA_op foo);
+static void p_locdeclist_(csA_locdeclist foo);
+static void p_locdec_(csA_locdec foo);
 
 void testparser(void)
 {
@@ -71,6 +73,9 @@ static void p_dec_(csA_dec dec)
 		p_paramlist_(p);
 		fprintf(debugs, ")");
 		fprintf(debugs, " %s\n", csS_name(s));
+		fprintf(debugs, "{\n");
+		p_locdeclist_(csA_decfunloclist(dec));
+		fprintf(debugs, "}\n");
 		break;
 	default:
 		VERIFY(0);
@@ -188,6 +193,7 @@ static void p_sumexprlist_(csA_sumexprlist list)
 	}
 	
 }
+
 static void p_sumexpr_(csA_sumexpr foo)
 {
 	if (!foo) return;
@@ -201,6 +207,7 @@ static void p_term_(csA_term foo)
 	p_uexpr_(foo->uexpr);
 	p_op_(foo->op);
 }
+
 static void p_termlist_(csA_termlist list)
 {
 	if (!list) return;
@@ -231,6 +238,39 @@ static void p_factor_(csA_factor foo)
 	}
 }
 
+static void p_locdeclist_(csA_locdeclist list)
+{
+	if (!list) return;
+	csA_locdec pos;
+	list_for_each_entry(pos, list, next) {
+		p_locdec_(pos);
+	}
+	
+}
+/*
+struct a_locvardec_ {
+	csG_pos pos;
+	csL_list next;
+	csS_symbol type;
+	csS_symbol name;
+	csA_simplelist list;/*list may null
+};
+*/
+static void p_locdec_(csA_locdec foo)
+{
+	csS_symbol s;
+	if (!foo) return;
+	s = csA_locdectype(foo);
+	fprintf(debugs,"var %s", csS_name(s));
+	s = csA_locdecname(foo);
+	fprintf(debugs," %s", csS_name(s));
+	csA_simplelist list = csA_locdecsimlist(foo);
+	if (list) {
+		fprintf(debugs," = ");
+		p_simplelist_(list);
+	}
+	fprintf(debugs,";\n");
+}
 static void p_op_(csA_op foo)
 {
 	if (!foo) return;

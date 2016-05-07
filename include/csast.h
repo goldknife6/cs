@@ -23,6 +23,8 @@ typedef struct a_sumexpr_ *csA_sumexpr;
 typedef csL_list *csA_sumexprlist;
 typedef struct a_andexpr_ *csA_andexpr;
 typedef struct a_simpleexpr_ *csA_simpleexpr;
+typedef struct a_locvardec_ *csA_locdec;
+typedef csL_list *csA_locdeclist;
 
 typedef enum {
 	csA_plus = 1 , csA_minus, csA_times, csA_divide,
@@ -47,7 +49,7 @@ struct a_dec_ {
 			csS_symbol name;
 			csA_paramlist list;/*may empty*/
 			csS_symbol restype;
-			//CSastLocVarDecList locList;/*may empty*/
+			csA_locdeclist loclist;/*may empty*/
 			//CSastStmtList stmtList;/*may empty*/
 		} fundec;
 	} u;
@@ -62,13 +64,14 @@ extern csA_simplelist csA_decvarlist(csA_dec foo);
 extern csS_symbol csA_decfunrestype(csA_dec foo);
 extern csS_symbol csA_decfunname(csA_dec foo);
 extern csA_paramlist csA_decfunparamlist(csA_dec foo);
+extern csA_locdeclist csA_decfunloclist(csA_dec foo);
 extern void csA_setdecvartype(csA_dec foo,csS_symbol type);
 extern void csA_setdecvarname(csA_dec foo,csS_symbol name);
 extern void csA_setdecvarlist(csA_dec foo,csA_simplelist list);
 extern void csA_setdecfunrestype(csA_dec foo,csS_symbol restype);
 extern void csA_setdecfunname(csA_dec foo,csS_symbol name);
 extern void csA_setdecfunparamlist(csA_dec foo,csA_paramlist list);
-
+extern void csA_setdecfunloclist(csA_dec foo,csA_locdeclist list);
 struct a_paramt_ {
 	csS_symbol type;
 	csS_symbol name;
@@ -232,35 +235,29 @@ extern int csA_immutchar(csA_immutable foo);
 extern int csA_immutnum(csA_immutable foo);
 extern csG_string csA_immutstr(csA_immutable foo);
 
-
-
-
-
-
-typedef struct a_stmt_ *csA_stmt;
-typedef enum {
-		csA_exprstmt ,csA_compoundstmt,csA_ifstmt,
-		csA_whilestmt,csA_forstmt,csA_returnstmt,csA_breakstmt
-} csA_stmtkind;
-
-
-
-
-
-struct a_stmt_ {
-	csA_stmtkind kind;
-	csG_pos pos;
-};
-
 struct a_locvardec_ {
 	csG_pos pos;
-	csS_symbol typeid;
-	csS_symbol id;
-	//CSastSmpExpr smp;/*smp may null*/
+	csL_list next;
+	csS_symbol type;
+	csS_symbol name;
+	csA_simplelist list;/*list may null*/
 };
+extern csA_locdeclist csA_mklocdeclist();
+extern void csA_locvardecadd(csA_simplelist list,csA_locdec dec);
+extern csS_symbol csA_locdectype(csA_locdec foo);
+extern csS_symbol csA_locdecname(csA_locdec foo);
+extern csA_simplelist csA_locdecsimlist(csA_locdec foo);
+extern void csA_setlocdectype(csA_locdec foo,csS_symbol type);
+extern void csA_setlocdecname(csA_locdec foo,csS_symbol name);
+extern void csA_setlocdecsimlist(csA_locdec foo,csA_simplelist list);
+extern csA_locdec csA_mklocdec();
 
-
-
-
-
+typedef struct a_stmt_ *csA_stmt;
+struct a_stmt_ {
+	enum {
+		csA_exprstmt ,csA_compoundstmt,csA_ifstmt,
+		csA_whilestmt,csA_forstmt,csA_returnstmt,csA_breakstmt
+	} kind;
+	csG_pos pos;
+};
 #endif/*!CS_AST_H*/

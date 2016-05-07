@@ -27,6 +27,7 @@ void csA_setdecvartype(csA_dec foo,csS_symbol type)
 csS_symbol csA_decvartype(csA_dec foo)
 {
 	VERIFY(foo);
+	VERIFY(foo->kind == csA_vardec);
 	return foo->u.vardec.type;
 }
 
@@ -40,6 +41,7 @@ void csA_setdecvarname(csA_dec foo,csS_symbol name)
 csS_symbol csA_decvarname(csA_dec foo)
 {
 	VERIFY(foo);
+	VERIFY(foo->kind == csA_vardec);
 	return foo->u.vardec.name;
 }
 
@@ -60,24 +62,40 @@ void csA_setdecfunrestype(csA_dec foo,csS_symbol restype)
 csS_symbol csA_decfunrestype(csA_dec foo)
 {
 	VERIFY(foo);
+	VERIFY(foo->kind == csA_fundec);
 	return foo->u.fundec.restype;
 }
 csS_symbol csA_decfunname(csA_dec foo)
 {
 	VERIFY(foo);
+	VERIFY(foo->kind == csA_fundec);
 	return foo->u.fundec.name;
 }
 
 void csA_setdecfunparamlist(csA_dec foo,csA_paramlist list)
 {
 	VERIFY(foo);
+	foo->kind = csA_fundec;
 	foo->u.fundec.list = list;
 }
 
 csA_paramlist csA_decfunparamlist(csA_dec foo)
 {
 	VERIFY(foo);
+	VERIFY(foo->kind == csA_fundec);
 	return foo->u.fundec.list;
+}
+void csA_setdecfunloclist(csA_dec foo,csA_locdeclist list)
+{
+	VERIFY(foo);VERIFY(list);
+	foo->kind = csA_fundec;
+	foo->u.fundec.loclist = list;
+}	
+csA_locdeclist csA_decfunloclist(csA_dec foo)
+{
+	VERIFY(foo);
+	VERIFY(foo->kind == csA_fundec);
+	return foo->u.fundec.loclist;
 }
 /**************************************************************/
 
@@ -558,3 +576,50 @@ void csA_setandexprurel(csA_andexpr foo,csA_urelexpr urelexpr)
 	foo->urelexpr = urelexpr;
 }
 /**************************************************************/
+csA_locdeclist csA_mklocdeclist()
+{
+	csA_locdeclist foo = csU_malloc(sizeof(*foo));
+	INIT_LIST_HEAD(foo);
+	return foo;
+}
+csS_symbol csA_locdectype(csA_locdec foo)
+{
+	VERIFY(foo);
+	return foo->type;
+}
+csS_symbol csA_locdecname(csA_locdec foo)
+{
+	VERIFY(foo);
+	return foo->name;
+}
+csA_simplelist csA_locdecsimlist(csA_locdec foo)
+{
+	VERIFY(foo);
+	return foo->list;
+}
+csA_locdec csA_mklocdec()
+{
+	csA_locdec foo = csU_malloc(sizeof(*foo));
+	INIT_LIST_HEAD(&foo->next);
+	return foo;
+}
+void csA_setlocdectype(csA_locdec foo,csS_symbol type)
+{
+	VERIFY(foo);VERIFY(type);
+	foo->type = type;
+}
+void csA_setlocdecname(csA_locdec foo,csS_symbol name)
+{
+	VERIFY(foo);VERIFY(name);
+	foo->name = name;
+}
+void csA_setlocdecsimlist(csA_locdec foo,csA_simplelist list)
+{
+	VERIFY(foo);VERIFY(list);
+	foo->list = list;
+}
+void csA_locvardecadd(csA_simplelist list,csA_locdec dec)
+{
+	VERIFY(dec);VERIFY(list);
+	list_add_tail(&dec->next, list);
+}

@@ -23,6 +23,9 @@ static csA_andexpr 		p_andexpr_(void);
 static csA_andlist 		p_andlist_(void);
 static csA_simpleexpr 	p_simpleexpr_(void);
 static csA_simplelist 	p_simplelist_(void);
+static csA_locdec 		p_locvardec_(void);
+static csA_locdeclist 	p_locvardeclist_(void);
+
 
 #define MATCH(tok,msg,lab) ({if (!match(tok,msg)) goto lab;})
 
@@ -110,6 +113,8 @@ static csA_dec p_dec_(void)
 		}
 		MATCH(csL_ID,"missing type-id",sync);
 		MATCH(csL_LBRACE,"missing {",sync);
+		csA_locdeclist list = p_locvardeclist_();
+		if (list) csA_setdecfunloclist(foo,list);
 		MATCH(csL_RBRACE,"missing }",sync);
 	}
 	return foo;
@@ -470,4 +475,53 @@ loop:
 	}
 sync:
 	VERIFY(0);
+}
+/*
+locvardecList → locvardecList locvardec | locvardec
+locvardec → var type-id vardecid [= simpleexpr] ;
+*/
+static csA_locdec p_locvardec_(void)
+{
+	csA_locdec foo = csA_mklocdec();
+	if (token.kind == csL_VAR) {
+		MATCH(csL_VAR,"missing var",sync); //eat var keyword
+		if (token.kind == csL_ID) {		//eat type-id
+			csG_string name = csL_tokenstr(token);
+			csA_setlocdectype(foo,csS_mksymbol(name));
+		}
+		MATCH(csL_ID,"missing id",sync);
+		if (token.kind == csL_ID) {		//eat id
+			csG_string name = csL_tokenstr(token);
+			csA_setlocdecname(foo,csS_mksymbol(name));
+		}
+		MATCH(csL_ID,"missing id",sync);
+		if (token.kind == csL_ASSIGN) { //simpleExpr is optional
+			MATCH(csL_ASSIGN,"missing =",sync);
+			csA_simplelist list = p_simplelist_();
+			VERIFY(list);
+			csA_setlocdecsimlist(foo,list);
+		}
+		MATCH(csL_SEMICOLON,"missing ;",sync);
+		return foo;
+	} 
+sync:
+	VERIFY(0);
+}
+
+static csA_locdeclist p_locvardeclist_(void)
+{
+	csA_locdeclist foo = NULL;
+	csA_locdec bar = NULL;
+loop:
+	switch(token.kind) {
+	case csL_VAR:
+		if (!foo) foo = csA_mklocdeclist();
+		bar = p_locvardec_();
+		if (bar) csA_locvardecadd(foo,bar);
+		else VERIFY(0);
+		goto loop;
+	default:
+		return foo;
+	}
+	return foo;
 }
