@@ -52,7 +52,7 @@ void csS_insert(csS_table tab, csS_symbol sym, void *value)
 	csH_tabinsert(tab->top, sym, value);
 }
 
-csS_table csS_empty(csH_tabfreefp fp,csS_table top)
+csS_table csS_empty(csH_tabfreefp fp)
 {
 	VERIFY(fp);
 	csS_table tab  = csU_malloc(sizeof(*tab));

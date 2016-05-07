@@ -8,7 +8,7 @@ typedef struct s_table_ *csS_table;
 
 
 extern void *		csS_look(csS_table t, csS_symbol sym);
-extern csS_table 	csS_empty(csH_tabfreefp fp,csS_table top);
+extern csS_table 	csS_empty(csH_tabfreefp fp);
 extern void 		csS_insert(csS_table tab, csS_symbol sym, void *value);
 extern csG_string 	csS_name(csS_symbol sym);
 extern csS_symbol 	csS_mksymbol(csG_string name);

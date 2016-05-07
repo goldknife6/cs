@@ -8,7 +8,7 @@ void s_free(void *key,void *val)
 
 void testsym()
 {
-	csS_table tab = csS_empty(s_free,NULL);
+	csS_table tab = csS_empty(s_free);
 	char buf[100];
 	csS_symbol s;
 	sprintf(buf,"dsfs%dsdf",1);
