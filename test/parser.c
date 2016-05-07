@@ -247,15 +247,7 @@ static void p_locdeclist_(csA_locdeclist list)
 	}
 	
 }
-/*
-struct a_locvardec_ {
-	csG_pos pos;
-	csL_list next;
-	csS_symbol type;
-	csS_symbol name;
-	csA_simplelist list;/*list may null
-};
-*/
+
 static void p_locdec_(csA_locdec foo)
 {
 	csS_symbol s;
@@ -271,6 +263,7 @@ static void p_locdec_(csA_locdec foo)
 	}
 	fprintf(debugs,";\n");
 }
+
 static void p_op_(csA_op foo)
 {
 	if (!foo) return;

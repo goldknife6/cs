@@ -476,10 +476,7 @@ loop:
 sync:
 	VERIFY(0);
 }
-/*
-locvardecList → locvardecList locvardec | locvardec
-locvardec → var type-id vardecid [= simpleexpr] ;
-*/
+
 static csA_locdec p_locvardec_(void)
 {
 	csA_locdec foo = csA_mklocdec();
