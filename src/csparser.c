@@ -17,6 +17,12 @@ static csA_term 		p_term_(void);
 static csA_termlist 	p_termlist_(void);
 static csA_urelexpr 	p_urelexpr_(void);
 static csA_relexpr 		p_relexpr_(void);
+static csA_sumexpr 		p_sumexpr_(void);
+static csA_sumexprlist 	p_sumexprlist_(void);
+static csA_andexpr 		p_andexpr_(void);
+static csA_andlist 		p_andlist_(void);
+static csA_simpleexpr 	p_simpleexpr_(void);
+static csA_simplelist 	p_simplelist_(void);
 
 #define MATCH(tok,msg,lab) ({if (!match(tok,msg)) goto lab;})
 
@@ -49,11 +55,9 @@ loop:
 	switch(token.kind) {
 	case csL_DEF:
 	case csL_VAR:
+		if (!foo) foo = csA_mkdeclist();
 		bar = p_dec_();
-		if (bar) {
-			if (!foo) foo = csA_mkdeclist();
-			csA_declistadd(foo,bar);
-		}
+		if (bar) csA_declistadd(foo,bar);
 		goto loop;
 	case csL_ENDFILE:
 		break;
@@ -81,12 +85,15 @@ static csA_dec p_dec_(void)
 		}
 		MATCH(csL_ID,"missing id",sync);
 		if (token.kind == csL_ASSIGN) { //simpleexpr is optional
-			//MATCH(ASSIGN,NULL,sync);
-			//SET_VARDEC_SMP(foo,simpleExpr());
-			//if (!error) VERIFY(VARDEC_SMP(foo));
-			VERIFY(0);
+			MATCH(csL_ASSIGN,"missing =",sync);
+			csA_simplelist list = p_simplelist_();
+			VERIFY(list);
+			csA_setdecvarlist(foo,list);
+			//VERIFY(0);
 		}
+
 		MATCH(csL_SEMICOLON,"missing ;",sync);
+
 	} else if (token.kind == csL_DEF) {
 		MATCH(csL_DEF,"missing def",sync);
 		if (token.kind == csL_ID) {
@@ -230,6 +237,7 @@ static csA_factor p_factor_(void)
 		csA_setfactorimmut(foo,immut);
 		break;
 	default:
+		csL_prttoken(token);
 		VERIFY(0);
 	}
 	return foo;
@@ -244,6 +252,7 @@ static csA_uexpr p_unaryexpr_(void)
 		MATCH(csL_MINUS,"missing -",sync);
 		foo->flags = TRUE;
 	}
+
 	csA_factor fac = p_factor_();
 	VERIFY(fac);
 	csA_setuexpr(foo,fac);
@@ -286,8 +295,11 @@ loop:
 		default:
 			return foo;
 		}
+		MATCH(token.kind,"missing mulop",sync);
 		goto loop;
 		break;
+	default:
+		goto sync;
 	}
 	return foo;
 sync:
@@ -302,12 +314,158 @@ static csA_urelexpr p_urelexpr_(void)
 		MATCH(csL_NOT,"missing !",sync);
 		foo->flags = TRUE;
 	}
-	bar;
+	bar = p_relexpr_();
+	VERIFY(bar);
+	csA_seturelexprrel(foo,bar);
+	return foo;
 sync:
 	VERIFY(0);
 }
 
 static csA_relexpr p_relexpr_(void)
 {
+	csA_relexpr foo = csA_mkrelexpr();
+	csA_sumexprlist sum1 = p_sumexprlist_();
+	csA_sumexprlist sum2 = NULL;
+	csA_op op;
+	VERIFY(sum1);
+	csA_setrelexprsum1(foo,sum1);
+	switch (token.kind) {
+	case csL_EQ: 
+	case csL_NEQ:
+	case csL_LT: 
+	case csL_LE:
+	case csL_GT: 
+	case csL_GE:
+		foo->op = op;break;
+	default:
+		return foo;
+	}
 
+	MATCH(token.kind,"missiing rel op",sync);
+	sum2 = p_sumexprlist_();
+	if (!sum2) goto sync;
+	csA_setrelexprsum2(foo,sum2);
+	return foo;
+sync:
+	VERIFY(0);
+}
+
+static csA_sumexpr p_sumexpr_(void)
+{
+	csA_sumexpr foo = csA_mksumexpr();
+	csA_term bar = p_term_();
+	VERIFY(bar);
+	csA_setsumexprterm(foo,bar);
+	return foo;
+sync:
+	VERIFY(0);
+}
+static csA_sumexprlist p_sumexprlist_(void)
+{
+	csA_sumexprlist foo = NULL;
+	csA_sumexpr bar = NULL;
+loop:
+	switch (token.kind) {
+	case csL_MINUS:case csL_LPAREN:case csL_LBRACK:
+	case csL_NUM:case csL_CHAR:case csL_STRING:
+	case csL_TRUE:case csL_FALSE:case csL_ID:
+		if (!foo) foo = csA_mksumexprlist();
+		bar = p_sumexpr_();
+		VERIFY(bar);
+		csA_sumexprlistadd(foo,bar);
+		switch (token.kind) {
+		case csL_PLUS:	
+			csA_setsumexprop(bar,csA_plus);
+			break;
+		case csL_MINUS:
+			csA_setsumexprop(bar,csA_minus);
+			break;
+		default:
+			return foo;
+		}
+		MATCH(token.kind,"missing sumop",sync);
+		goto loop;
+	default:
+		goto sync;
+	}
+sync:
+	VERIFY(0);
+}
+
+csA_andexpr p_andexpr_(void)
+{
+	csA_andexpr foo = csA_mkandexpr();
+	csA_urelexpr bar = p_urelexpr_();
+	VERIFY(bar);
+	csA_setandexprurel(foo,bar);
+	return foo;
+}
+
+csA_andlist p_andlist_(void)
+{
+	csA_andlist foo = NULL;
+	csA_andexpr bar = NULL;
+loop:
+	switch (token.kind) {
+	case csL_NOT:case csL_MINUS:case csL_LPAREN:
+	case csL_LBRACK:case csL_NUM:case csL_CHAR:
+	case csL_TRUE:case csL_FALSE:case csL_STRING:
+	case csL_ID:
+		if (!foo) foo = csA_mkandlist();
+		bar = p_andexpr_();
+		if(bar) csA_andlistadd(foo,bar);
+		else VERIFY(0);
+		switch (token.kind) {
+		case csL_AND:
+			MATCH(csL_AND,"missing &",sync);
+			break;
+		default:
+			return foo;
+		}
+		goto loop;
+	default:
+		goto sync;	
+	}
+sync:
+	VERIFY(0);
+}
+
+csA_simpleexpr p_simpleexpr_(void)
+{
+	csA_simpleexpr foo = csA_mksimpleexpr();
+
+	csA_andlist bar = p_andlist_();
+	VERIFY(bar);
+	csA_setsimpleexprand(foo,bar);
+	return foo;
+}
+
+csA_simplelist p_simplelist_(void)
+{
+	csA_simplelist foo = NULL;
+	csA_simpleexpr bar = NULL;
+loop:
+	switch (token.kind) {
+	case csL_NOT:case csL_MINUS:case csL_LPAREN:
+	case csL_LBRACK:case csL_NUM:case csL_CHAR:
+	case csL_TRUE:case csL_FALSE:case csL_STRING:
+	case csL_ID:
+		if (!foo) foo = csA_mksimplelist();
+		bar = p_simpleexpr_();
+		if(bar) csA_simplelistadd(foo,bar);
+		else VERIFY(0);
+		switch (token.kind) {
+		case csL_OR:
+			MATCH(csL_OR,"missing |",sync);
+			break;
+		default:
+			return foo;
+		}
+		goto loop;
+	default:
+		goto sync;	
+	}
+sync:
+	VERIFY(0);
 }

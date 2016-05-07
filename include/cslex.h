@@ -8,7 +8,7 @@ typedef enum {
 		csL_COMMA,csL_COLON,csL_SEMICOLON,csL_LPAREN,csL_RPAREN,csL_LBRACK,csL_RBRACK,csL_LBRACE,csL_RBRACE,csL_DOT,csL_DOLLAR,csL_NOT,
 		/* ,		:			;			(			)			[			]		{				}	 .	  		$		! */
 		csL_PLUS,csL_MINUS,csL_TIMES,csL_DIVIDE,csL_EQ,csL_NEQ,csL_LT,csL_LE,csL_GT,csL_GE,csL_AND,csL_OR,csL_ASSIGN,
-		/*+		-	*		/	==  !=  < <=  > >=  &   |    =		*/
+		/*+			-			*		/			==  !=  < <=  > >=  &   |    =		*/
 		csL_IF,csL_ELSE,csL_WHILE,csL_FOR,csL_BREAK,csL_DEF,csL_TRUE/*true*/,csL_FALSE/*false*/,csL_RETURN,csL_VAR,
 		/* reserved words */
 		csL_ENDFILE,csL_ERROR

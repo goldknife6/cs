@@ -93,8 +93,16 @@ void csA_declistadd(csA_declist foo,csA_dec bar)
 	VERIFY(foo);VERIFY(bar);
 	list_add_tail(&bar->next, foo);
 }
-
-
+csA_simplelist csA_decvarlist(csA_dec foo)
+{
+	VERIFY(foo);
+	return foo->u.vardec.list;
+}
+void csA_setdecvarlist(csA_dec foo,csA_simplelist list)
+{
+	VERIFY(foo);VERIFY(list);
+	foo->u.vardec.list = list;
+}
 /**************************************************************/
 csA_param csA_mkparam()
 {
@@ -133,18 +141,38 @@ csA_paramlist csA_mkparamlist(void)
 	return foo;
 }
 
-
 void csA_paramlistadd(csA_paramlist foo,csA_param bar)
 {
 	VERIFY(foo);VERIFY(bar);
 	list_add_tail(&bar->next, foo);
 }
 /**************************************************************/
+csA_simplelist csA_mksimplelist()
+{
+	csA_simplelist foo = csU_malloc(sizeof(*foo));
+	INIT_LIST_HEAD(foo);
+	return foo;
+}
+void csA_simplelistadd(csA_simplelist foo,csA_simpleexpr bar)
+{
+	VERIFY(foo);VERIFY(bar);
+	list_add_tail(&bar->next, foo);
+}
 csA_simpleexpr csA_mksimpleexpr()
 {
 	csA_simpleexpr foo = csU_malloc(sizeof(*foo));
-	INIT_LIST_HEAD(foo);
+	INIT_LIST_HEAD(&foo->next);
 	return foo;
+}
+csA_andlist csA_simpleexprand(csA_simpleexpr foo)
+{
+	VERIFY(foo);
+	return foo->andlist;
+}
+void csA_setsimpleexprand(csA_simpleexpr foo,csA_andlist and)
+{
+	VERIFY(foo);VERIFY(and);
+	foo->andlist = and;
 }
 /**************************************************************/
 csG_pos csA_factorpos(csA_factor foo)
@@ -348,6 +376,13 @@ csA_uexpr csA_termuexpr(csA_term foo)
 void csA_settermop(csA_term foo,csA_op op)
 {
 	VERIFY(foo);VERIFY(op);
+	switch (op) {
+	case csA_times: case csA_divide:
+		foo->op = op;
+		break;
+	default:
+		VERIFY(0);
+	}
 }
 csA_op csA_termop(csA_term foo)
 {
@@ -370,6 +405,7 @@ csA_urelexpr csA_mkurelexpr()
 {
 	csA_urelexpr foo = csU_malloc(sizeof(*foo));
 	foo->flags = FALSE;
+	INIT_LIST_HEAD(&foo->next);
 	return foo;
 }
 csA_relexpr csA_urelexprrel(csA_urelexpr foo)
@@ -381,5 +417,144 @@ void csA_seturelexprrel(csA_urelexpr foo,csA_relexpr rel)
 {
 	VERIFY(foo);VERIFY(rel);
 	foo->rel = rel;
+}
+/**************************************************************/
+csA_relexpr csA_mkrelexpr(void)
+{
+	csA_relexpr foo = csU_malloc(sizeof(*foo));
+	return foo;
+}
+csG_pos csA_relexprpos(csA_relexpr foo)
+{
+	VERIFY(foo);
+	return foo->pos;
+}
+void csA_setrelexprpos(csA_relexpr foo,csG_pos pos)
+{
+	VERIFY(foo);
+	foo->pos = pos;
+}
+void csA_setrelexprop(csA_relexpr foo,csA_op op)
+{
+	VERIFY(foo);
+	switch (op) {
+	case csA_eq: case csA_neq:
+	case csA_lt: case csA_lq:
+	case csA_gt: case csA_gq:
+		foo->op = op;
+		break;
+	default:
+		VERIFY(0);
+	}
+	
+}
+csA_op csA_relexprop(csA_relexpr foo)
+{
+	VERIFY(foo);
+	return foo->op;
+}
+void csA_setrelexprsum1(csA_relexpr foo,csA_sumexprlist sum)
+{
+	VERIFY(foo);VERIFY(sum);
+	foo->sum1 = sum;
+}
+csA_sumexprlist csA_relexprsum1(csA_relexpr foo)
+{
+	VERIFY(foo);
+	return foo->sum1;
+}
+void csA_setrelexprsum2(csA_relexpr foo,csA_sumexprlist sum)
+{
+	VERIFY(foo);VERIFY(sum);
+	foo->sum2 = sum;
+}
+csA_sumexprlist csA_relexprsum2(csA_relexpr foo)
+{
+	VERIFY(foo);
+	return foo->sum2;
+}
+/**************************************************************/
+csA_sumexprlist csA_mksumexprlist(void)
+{
+	csA_sumexprlist foo = csU_malloc(sizeof(*foo));
+	INIT_LIST_HEAD(foo);
+	return foo;
+}
+void csA_sumexprlistadd(csA_sumexprlist head,csA_sumexpr sum)
+{
+	VERIFY(head);
+	VERIFY(sum);
+	list_add_tail(&sum->next, head);
+}
+csA_sumexpr csA_mksumexpr(void)
+{
+	csA_sumexpr foo = csU_malloc(sizeof(*foo));
+	INIT_LIST_HEAD(&foo->next);
+	return foo;
+}
+csG_pos csA_sumexprpos(csA_sumexpr sum)
+{
+	VERIFY(sum);
+	return sum->pos;
+}
+void csA_setsumexprpos(csA_sumexpr sum,csG_pos pos)
+{
+	VERIFY(sum);
+	sum->pos = pos;
+}
+csA_term csA_sumexprterm(csA_sumexpr sum)
+{
+	VERIFY(sum);
+	return sum->term;
+}
+void csA_setsumexprterm(csA_sumexpr sum,csA_term term)
+{
+	VERIFY(sum);VERIFY(term);
+	sum->term = term;
+}
+void csA_setsumexprop(csA_sumexpr foo,csA_op op)
+{
+	VERIFY(foo);
+	switch (op) {
+	case csA_plus: case csA_minus:
+		foo->op = op;
+		break;
+	default:
+		VERIFY(0);
+	}
+}
+csA_op csA_sumexprop(csA_sumexpr foo)
+{
+	VERIFY(foo);
+	return foo->op;
+}
+/**************************************************************/
+csA_andlist csA_mkandlist()
+{
+	csA_andlist foo = csU_malloc(sizeof(*foo));
+	INIT_LIST_HEAD(foo);
+	return foo;
+}
+void csA_andlistadd(csA_andlist head,csA_andexpr bar)
+{
+	VERIFY(head);
+	VERIFY(bar);
+	list_add_tail(&bar->next, head);
+}
+csA_andexpr csA_mkandexpr()
+{
+	csA_andexpr foo = csU_malloc(sizeof(*foo));
+	INIT_LIST_HEAD(&foo->next);
+	return foo;
+}
+csA_urelexpr csA_andexprurel(csA_andexpr foo)
+{
+	VERIFY(foo);
+	return foo->urelexpr;
+}
+void csA_setandexprurel(csA_andexpr foo,csA_urelexpr urelexpr)
+{
+	VERIFY(foo);
+	foo->urelexpr = urelexpr;
 }
 /**************************************************************/

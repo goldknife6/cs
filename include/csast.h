@@ -8,8 +8,8 @@ typedef struct a_dec_ *csA_dec;
 typedef csL_list *csA_declist;
 typedef struct a_paramt_ *csA_param;
 typedef csL_list *csA_paramlist;
-typedef csL_list *csA_simpleexpr;;
-typedef csL_list *csA_andexpr;
+typedef csL_list *csA_simplelist;;
+typedef csL_list *csA_andlist;
 typedef struct a_urelexpr_ *csA_urelexpr;
 typedef struct a_relexpr_ *csA_relexpr;
 typedef struct a_factor_ *csA_factor;
@@ -21,6 +21,8 @@ typedef struct a_term_ *csA_term;
 typedef csL_list *csA_termlist;
 typedef struct a_sumexpr_ *csA_sumexpr;
 typedef csL_list *csA_sumexprlist;
+typedef struct a_andexpr_ *csA_andexpr;
+typedef struct a_simpleexpr_ *csA_simpleexpr;
 
 typedef enum {
 	csA_plus = 1 , csA_minus, csA_times, csA_divide,
@@ -39,7 +41,7 @@ struct a_dec_ {
 		struct {
 			csS_symbol type;
 			csS_symbol name;
-			//CSastSmpExpr smp;/*smp may null*/
+			csA_simplelist list;/*list may null*/
 		} vardec;
 		struct {
 			csS_symbol name;
@@ -50,15 +52,19 @@ struct a_dec_ {
 		} fundec;
 	} u;
 };
+extern csA_declist csA_mkdeclist(void);
+extern void csA_declistadd(csA_declist foo,csA_dec bar);
 extern csA_dec csA_mkdec(void);
 extern csG_pos csA_decpos(csA_dec foo);
 extern csS_symbol csA_decvartype(csA_dec foo);
 extern csS_symbol csA_decvarname(csA_dec foo);
+extern csA_simplelist csA_decvarlist(csA_dec foo);
 extern csS_symbol csA_decfunrestype(csA_dec foo);
 extern csS_symbol csA_decfunname(csA_dec foo);
 extern csA_paramlist csA_decfunparamlist(csA_dec foo);
 extern void csA_setdecvartype(csA_dec foo,csS_symbol type);
 extern void csA_setdecvarname(csA_dec foo,csS_symbol name);
+extern void csA_setdecvarlist(csA_dec foo,csA_simplelist list);
 extern void csA_setdecfunrestype(csA_dec foo,csS_symbol restype);
 extern void csA_setdecfunname(csA_dec foo,csS_symbol name);
 extern void csA_setdecfunparamlist(csA_dec foo,csA_paramlist list);
@@ -69,41 +75,70 @@ struct a_paramt_ {
 	csL_list next;
 	csG_pos pos;
 };
-extern csA_declist csA_mkdeclist(void);
-extern void csA_declistadd(csA_declist foo,csA_dec bar);
-
 extern csA_param csA_mkparam();
 extern csS_symbol csA_paramtype(csA_param foo);
 extern csS_symbol csA_paramname(csA_param foo);
 extern void csA_setparamtype(csA_param foo,csS_symbol type);
 extern void csA_setparamname(csA_param foo,csS_symbol name);
-
 extern csA_paramlist csA_mkparamlist(void);
 extern void csA_paramlistadd(csA_paramlist foo,csA_param bar);
 
+struct a_simpleexpr_ {
+	csL_list next;
+	csA_andlist andlist;
+	csG_pos pos;
+};
+extern csA_simplelist csA_mksimplelist();
+extern void csA_simplelistadd(csA_simplelist head,csA_simpleexpr bar);
 extern csA_simpleexpr csA_mksimpleexpr();
-extern void csA_simpleexpradd(csA_simpleexpr head,csA_andexpr bar);
+extern csA_andlist csA_simpleexprand(csA_simpleexpr foo);
+extern void csA_setsimpleexprand(csA_simpleexpr foo,csA_andlist and);
 
+struct a_andexpr_ {
+	csL_list next;
+	csA_urelexpr urelexpr;
+	csG_pos pos;
+};
+extern csA_andlist csA_mkandlist();
+extern void csA_andlistadd(csA_andlist head,csA_andexpr bar);
 extern csA_andexpr csA_mkandexpr();
-extern void csA_andexpradd(csA_andexpr head,csA_urelexpr bar);
-
+extern csA_urelexpr csA_andexprurel(csA_andexpr foo);
+extern void csA_setandexprurel(csA_andexpr foo,csA_urelexpr urelexpr);
 
 struct a_sumexpr_ {
 	csL_list next;
 	csA_op op;
-	csA_term uexpr;
+	csA_term term;
 	csG_pos pos;
 };
 extern csA_sumexprlist csA_mksumexprlist(void);
+extern void csA_sumexprlistadd(csA_sumexprlist head,csA_sumexpr sum);
+extern csA_sumexpr csA_mksumexpr(void);
+extern csG_pos csA_sumexprpos(csA_sumexpr sum);
+extern void csA_setsumexprpos(csA_sumexpr sum,csG_pos pos);
+extern csA_term csA_sumexprterm(csA_sumexpr sum);
+extern void csA_setsumexprterm(csA_sumexpr sum,csA_term pos);
+extern void csA_setsumexprop(csA_sumexpr foo,csA_op op);
+extern csA_op csA_sumexprop(csA_sumexpr foo);
 
 struct a_relexpr_ {
-	csA_sumexpr sum1;
+	csA_sumexprlist sum1;
 	csA_op op;
-	csA_sumexpr sum2;
+	csA_sumexprlist sum2;
 	csG_pos pos;
 };
+extern csA_relexpr csA_mkrelexpr(void);
+extern csG_pos csA_relexprpos(csA_relexpr rel);
+extern void csA_setrelexprpos(csA_relexpr foo,csG_pos pos);
+extern void csA_setrelexprop(csA_relexpr foo,csA_op op);
+extern csA_op csA_relexprop(csA_relexpr foo);
+extern void csA_setrelexprsum1(csA_relexpr foo,csA_sumexprlist sum1);
+extern csA_sumexprlist csA_relexprsum1(csA_relexpr foo);
+extern void csA_setrelexprsum2(csA_relexpr foo,csA_sumexprlist sum2);
+extern csA_sumexprlist csA_relexprsum2(csA_relexpr foo);
 
 struct a_urelexpr_ {
+	csL_list next;
 	csG_bool flags; 
 	csA_relexpr rel;
 	csG_pos pos;
