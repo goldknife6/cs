@@ -502,15 +502,15 @@ void csA_setsumexprpos(csA_sumexpr sum,csG_pos pos)
 	VERIFY(sum);
 	sum->pos = pos;
 }
-csA_term csA_sumexprterm(csA_sumexpr sum)
+csA_termlist csA_sumexprterm(csA_sumexpr sum)
 {
 	VERIFY(sum);
-	return sum->term;
+	return sum->list;
 }
-void csA_setsumexprterm(csA_sumexpr sum,csA_term term)
+void csA_setsumexprterm(csA_sumexpr sum,csA_termlist list)
 {
-	VERIFY(sum);VERIFY(term);
-	sum->term = term;
+	VERIFY(sum);VERIFY(list);
+	sum->list = list;
 }
 void csA_setsumexprop(csA_sumexpr foo,csA_op op)
 {

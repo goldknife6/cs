@@ -89,11 +89,8 @@ static csA_dec p_dec_(void)
 			csA_simplelist list = p_simplelist_();
 			VERIFY(list);
 			csA_setdecvarlist(foo,list);
-			//VERIFY(0);
 		}
-
 		MATCH(csL_SEMICOLON,"missing ;",sync);
-
 	} else if (token.kind == csL_DEF) {
 		MATCH(csL_DEF,"missing def",sync);
 		if (token.kind == csL_ID) {
@@ -332,12 +329,17 @@ static csA_relexpr p_relexpr_(void)
 	csA_setrelexprsum1(foo,sum1);
 	switch (token.kind) {
 	case csL_EQ: 
+		csA_setrelexprop(foo,csA_eq);break;
 	case csL_NEQ:
+		csA_setrelexprop(foo,csA_neq);break;
 	case csL_LT: 
+		csA_setrelexprop(foo,csA_lt);break;
 	case csL_LE:
+		csA_setrelexprop(foo,csA_lq);break;
 	case csL_GT: 
+		csA_setrelexprop(foo,csA_gt);break;
 	case csL_GE:
-		foo->op = op;break;
+		csA_setrelexprop(foo,csA_gq);break;
 	default:
 		return foo;
 	}
@@ -354,7 +356,7 @@ sync:
 static csA_sumexpr p_sumexpr_(void)
 {
 	csA_sumexpr foo = csA_mksumexpr();
-	csA_term bar = p_term_();
+	csA_termlist bar = p_termlist_();
 	VERIFY(bar);
 	csA_setsumexprterm(foo,bar);
 	return foo;

@@ -108,7 +108,7 @@ extern void csA_setandexprurel(csA_andexpr foo,csA_urelexpr urelexpr);
 struct a_sumexpr_ {
 	csL_list next;
 	csA_op op;
-	csA_term term;
+	csA_termlist list;
 	csG_pos pos;
 };
 extern csA_sumexprlist csA_mksumexprlist(void);
@@ -116,8 +116,8 @@ extern void csA_sumexprlistadd(csA_sumexprlist head,csA_sumexpr sum);
 extern csA_sumexpr csA_mksumexpr(void);
 extern csG_pos csA_sumexprpos(csA_sumexpr sum);
 extern void csA_setsumexprpos(csA_sumexpr sum,csG_pos pos);
-extern csA_term csA_sumexprterm(csA_sumexpr sum);
-extern void csA_setsumexprterm(csA_sumexpr sum,csA_term pos);
+extern csA_termlist csA_sumexprterm(csA_sumexpr sum);
+extern void csA_setsumexprterm(csA_sumexpr sum,csA_termlist list);
 extern void csA_setsumexprop(csA_sumexpr foo,csA_op op);
 extern csA_op csA_sumexprop(csA_sumexpr foo);
 
