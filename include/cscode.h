@@ -7,17 +7,12 @@
 #include "cslist.h"
 #include "csframe.h"
 
-typedef struct c_info_ {
-
-} csC_info;
-
-
-
 typedef csL_list csC_quadlist;
 typedef struct c_quad_ *csC_quad;
 typedef struct c_address_ csC_address;
 typedef csL_list csC_fraglist;
 typedef struct c_frag_ *csC_frag;
+
 
 extern csC_fraglist fraglist;
 
@@ -52,17 +47,11 @@ struct c_frag_ {
 		csC_procfrag ,csC_strfrag,
 		csC_intfrag , csC_boolfrag
 	} kind;
+	csF_access access;
 	union {
-		csF_access access;
-		struct {
-			csG_string strv;
-		} strv;
-		struct {
-			int intv;
-		} intv;
-		struct {
-			csG_bool boolv;
-		} boolv;
+		csG_string strv;
+		int intv;
+		csG_bool boolv;
 		struct {
 			csC_quadlist body;
 			csF_frame frame;
@@ -70,5 +59,20 @@ struct c_frag_ {
 	} u;
 };
 
-csC_info c_declist_(csS_table val,csS_table type,csA_declist list);
+typedef struct c_info_ {
+	enum {
+		c_empty_,c_addr_,c_intconst_,
+		c_strconst_,c_boolconst_
+	} kind;
+	csT_type ty;
+	union {
+		int intconst;
+		csG_string strconst;
+		csG_bool boolconst;
+		csC_address addr;
+	} u;
+} csC_info;
+
+extern csC_info c_declist_(csS_table val,csS_table type,csA_declist list);
+extern void csC_printcode();
 #endif/*!CS_CODE_H*/
