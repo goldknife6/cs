@@ -1,25 +1,21 @@
 #ifndef CS_TEMP_H
 #define CS_TEMP_H
 #include "csglobal.h"
-
+#include "cssymbol.h"
 
 typedef struct t_temp_ *csT_temp;
-csT_temp csT_newtemp(void);
+extern csT_temp csT_newtemp(void);
 
 typedef struct t_templist_ *csT_templist;
-csT_templist csT_mktemplist(csT_temp h, csT_templist t);
+extern csT_templist csT_mktemplist(csT_temp h, csT_templist t);
 
-typedef struct t_label_ *csT_label;
+typedef csS_symbol csT_label;
 
+
+extern csT_label csT_newlabel(void);
+extern csT_label csT_namedlabel(csG_string name);
 /*
-csT_label CStmpNewlabel(void);
-csT_label CStmpNamedlabel(char* name);
 char* CStmpLabelstring(csT_label s);
-
-typedef struct cs_labelList_ *CSlabelList;
-struct cs_labelList_ { csT_label head; CSlabelList tail;};
-
-
 
 
 void printTemp(CStemp h);

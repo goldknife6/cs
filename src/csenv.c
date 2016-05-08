@@ -62,10 +62,12 @@ struct e_env_ {
 csT_type csE_varty(csE_enventry foo)
 {
 	VERIFY(foo);
+	VERIFY(foo->kind == csE_var);
 	return foo->u.var.type;
 }
 csF_access csE_varaccess(csE_enventry foo)
 {
 	VERIFY(foo);
+	VERIFY(foo->kind == csE_var);
 	return foo->u.var.access;
 }

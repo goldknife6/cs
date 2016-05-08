@@ -3,11 +3,9 @@
 #include "csglobal.h"
 #include "cssymbol.h"
 #include "cstype.h"
-#include "cslist.h"
 #include "csframe.h"
 
 typedef struct e_env_ *csE_enventry;
-
 struct e_env_ {
 	enum {
 		csE_var,csE_fun
@@ -21,7 +19,7 @@ struct e_env_ {
 		struct {
 			csT_typelist formals;
 			csT_type res;
-			//csF_frame frame;
+			csF_frame frame;
 		} fun;
 	} u;
 };
