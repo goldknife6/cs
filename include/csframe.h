@@ -24,7 +24,7 @@ struct f_frame_ {
 	int framesize ;
 };
 
-
+extern csF_frame csF_newframe(csT_label name); 
 extern csF_access csF_alloclocal(csF_frame frame);
 extern csF_access csF_allocglobal(csT_type type);
 #endif/*!CS_FRAME_H*/

@@ -30,15 +30,18 @@ csE_enventry csE_varentry(csT_type type,csF_access access,csS_symbol name)
 	foo->u.var.type = type;
 	foo->u.var.access = access;
 	foo->name = name;
+	return foo;
 }
-csE_enventry csE_funentry(csT_typelist formals,csT_type res,csS_symbol name)
+csE_enventry csE_funentry(csT_typelist formals,csT_type res,csS_symbol name,csF_frame frame)
 {
-	VERIFY(formals);VERIFY(res);VERIFY(name);
+	VERIFY(formals);VERIFY(res);VERIFY(name);VERIFY(frame);
 	csE_enventry foo = csU_malloc(sizeof(*foo));
 	foo->kind = csE_fun;
 	foo->u.fun.res = res;
 	foo->u.fun.formals = formals;
 	foo->name = name;
+	foo->u.fun.frame = frame;
+	return foo;
 }
 /*
 struct e_env_ {

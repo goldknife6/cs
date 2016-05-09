@@ -14,6 +14,7 @@ static void c_printquad(csC_quad quad);
 static csC_frag c_strfrag_(csF_access access,csC_info inf);
 
 static csC_info c_dec_(csS_table val,csS_table type,csA_dec list);
+static csC_info c_locdeclist(csS_table val,csS_table type,csA_locdec list);
 static csC_info c_simplelist_(csS_table vtab,csS_table ttab,csA_simplelist foo);
 static csC_info c_simple_(csS_table vtab,csS_table ttab,csA_simpleexpr foo);
 static csC_info c_andlist_(csS_table vtab,csS_table ttab,csA_andlist foo);
@@ -21,9 +22,7 @@ static csC_info c_andexpr_(csS_table vtab,csS_table ttab,csA_andexpr foo);
 static csC_info c_urelexpr_(csS_table vtab,csS_table ttab,csA_urelexpr foo);
 static csC_info c_relexpr_(csS_table vtab,csS_table ttab,csA_relexpr foo);
 static csC_info c_sumexprlist_(csS_table vtab,csS_table ttab,csA_sumexprlist foo);
-static csC_info c_sumexpr_(csS_table vtab,csS_table ttab,csA_sumexpr foo);
 static csC_info c_termlist_(csS_table vtab,csS_table ttab,csA_termlist foo);
-static csC_info c_term_(csS_table vtab,csS_table ttab,csA_term foo);
 static csC_info c_uexpr_(csS_table vtab,csS_table ttab,csA_uexpr foo);
 static csC_info c_factor_(csS_table vtab,csS_table ttab,csA_factor foo);
 static csC_info c_immutable_(csS_table vtab,csS_table ttab,csA_immutable foo);
@@ -169,6 +168,19 @@ static csC_frag c_frag_(csF_access access,csC_info inf)
 	return foo;
 }
 
+static csT_typelist c_mktypelist_(csS_table ttab,csA_paramlist foo)
+{
+	csT_typelist list = csT_mktypelist();
+	csA_param pos;
+	list_for_each_entry(pos, foo, next) {
+		VERIFY(pos);
+		csS_symbol tyname = csA_paramtype(pos);
+		csT_type ty = csS_look(ttab, tyname);
+		VERIFY(ty);
+		csT_typelistadd(list,ty);
+	}
+	return list;
+}
 csC_info c_declist_(csS_table val,csS_table type,csA_declist list)
 {
 	csC_info inf = c_info_();
@@ -205,13 +217,31 @@ static csC_info c_dec_(csS_table vtab,csS_table ttab,csA_dec foo)
 		c_fraglistadd_();
 		break;
 	}
-	case csA_fundec:
+	case csA_fundec:{
+		csS_symbol restype = csA_decfunrestype(foo);
+		csS_symbol name = csA_decfunname(foo);
+		csT_type ty = csS_look(ttab, restype);
+		VERIFY(ty);
+		csE_enventry e = csS_look(vtab, name);
+		VERIFY(!e);
+		csT_typelist list = c_mktypelist_(ttab,csA_decfunparamlist(foo));
+		csF_frame frame = csF_newframe(name);
+		csT_label lable = csT_namedlabel(csS_name(name));
+		e = csE_funentry(list,ty,name,frame);
+		csS_insert(vtab, name, e);
 		break;
+	}
 	default:
 		VERIFY(0);
 	}
 	return inf;
 }
+
+static csC_info c_locdeclist(csS_table val,csS_table type,csA_locdec list)
+{
+
+}
+
 static csC_info c_simplelist_(csS_table vtab,csS_table ttab,csA_simplelist foo)
 {
 	csC_info inf;
@@ -222,13 +252,7 @@ static csC_info c_simplelist_(csS_table vtab,csS_table ttab,csA_simplelist foo)
 	}
 	return inf;
 }
-/*
-struct a_simpleexpr_ {
-	csL_list next;
-	csA_andlist andlist;
-	csG_pos pos;
-};
-*/
+
 static csC_info c_simple_(csS_table vtab,csS_table ttab,csA_simpleexpr foo)
 {
 	csC_info inf;
@@ -247,13 +271,7 @@ static csC_info c_andlist_(csS_table vtab,csS_table ttab,csA_andlist foo)
 	}
 	return inf;
 }
-/*
-struct a_andexpr_ {
-	csL_list next;
-	csA_urelexpr urelexpr;
-	csG_pos pos;
-};
-*/
+
 static csC_info c_andexpr_(csS_table vtab,csS_table ttab,csA_andexpr foo)
 {
 	csC_info inf;
@@ -291,7 +309,7 @@ static csC_info c_relexpr_(csS_table vtab,csS_table ttab,csA_relexpr foo)
 	csC_info inf;
 	VERIFY(foo);
 	inf = c_sumexprlist_(vtab,ttab,csA_relexprsum1(foo));
-	VERIFY(csA_relexprop(foo));
+	VERIFY(!csA_relexprop(foo));
 	return inf;
 }
 
@@ -299,9 +317,29 @@ static csC_info c_sumexprlist_(csS_table vtab,csS_table ttab,csA_sumexprlist foo
 {
 	csC_info inf;
 	csA_sumexpr pos;
-	if (!foo) VERIFY(0);
+	VERIFY(foo);
+	csA_op op  = 0;
 	list_for_each_entry(pos, foo, next) {
-		inf = c_sumexpr_(vtab,ttab,pos);
+		csC_info tmp = c_termlist_(vtab,ttab,csA_sumexprterm(pos));
+		if (op) {
+			if (tmp.kind == c_intconst_ && inf.kind == c_intconst_) {
+				switch (op) {
+				case csA_plus:
+					tmp.u.intconst = inf.u.intconst + tmp.u.intconst;
+					break;
+				case csA_minus:
+					tmp.u.intconst = inf.u.intconst - tmp.u.intconst;
+					break;
+				default:
+					VERIFY(0);
+				}
+				
+			} else if (tmp.kind == c_strconst_ && inf.kind == c_strconst_) {
+				VERIFY(0);
+			}
+		}
+		op = csA_sumexprop(pos);
+		inf = tmp;
 	}
 	return inf;
 }
@@ -313,48 +351,36 @@ struct a_sumexpr_ {
 	csG_pos pos;
 };
 */
-static csC_info c_sumexpr_(csS_table vtab,csS_table ttab,csA_sumexpr foo)
-{
-	csC_info inf;
-	VERIFY(foo);
-	inf = c_termlist_(vtab,ttab,csA_sumexprterm(foo));
-	VERIFY(csA_sumexprop(foo));
-	return inf;
-}
 
 static csC_info c_termlist_(csS_table vtab,csS_table ttab,csA_termlist foo)
 {
 	csC_info inf;
 	csA_term pos;
 	VERIFY(foo);
+	csA_op op  = 0;
 	list_for_each_entry(pos, foo, next) {
-		inf = c_term_(vtab,ttab,pos);
+		csC_info tmp = c_uexpr_(vtab,ttab,csA_termuexpr(pos));
+		if (op) {
+			if (tmp.kind == c_intconst_ && inf.kind == c_intconst_) {
+				switch (op) {
+				case csA_times:
+					tmp.u.intconst = inf.u.intconst * tmp.u.intconst;
+					break;
+				case csA_divide:
+					tmp.u.intconst = inf.u.intconst / tmp.u.intconst;
+					break;
+				default:
+					VERIFY(0);
+				}
+			} else if (tmp.kind == c_strconst_ && inf.kind == c_strconst_) {
+				VERIFY(0);
+			}
+		}
+		op = csA_termop(pos);
+		inf = tmp;
 	}
 	return inf;
 }
-/*
-struct a_term_ {
-	csL_list next;
-	csA_op op;
-	csA_uexpr uexpr;
-	csG_pos pos;
-}; 
-*/
-static csC_info c_term_(csS_table vtab,csS_table ttab,csA_term foo)
-{
-	csC_info inf;
-	VERIFY(foo);
-	inf = c_uexpr_(vtab,ttab,csA_termuexpr(foo));
-	VERIFY(csA_termop(foo));
-	return inf;
-}
-/*
-struct a_unaryexpr_ {
-	csG_bool flags;
-	csA_factor factor;
-	csG_pos pos;
-};
-*/
 static csC_info c_uexpr_(csS_table vtab,csS_table ttab,csA_uexpr foo)
 {
 	csC_info inf;
@@ -364,16 +390,7 @@ static csC_info c_uexpr_(csS_table vtab,csS_table ttab,csA_uexpr foo)
 	inf = c_factor_(vtab,ttab,csA_uexprfac(foo));
 	return inf;
 }
-/*
-struct a_factor_ {
-	enum {csA_immut,csA_mut} kind;
-	csG_pos pos;
-	union {
-		csA_immutable immut;
-		csA_mutable mut;
-	} u;
-};
-*/
+
 static csC_info c_factor_(csS_table vtab,csS_table ttab,csA_factor foo)
 {
 	csC_info inf;
@@ -406,23 +423,46 @@ struct a_immutable_ {
 	} u;
 };
 */
+//NUMCONST | CHARCONST | STRINGCONST | true | false
 static csC_info c_immutable_(csS_table vtab,csS_table ttab,csA_immutable foo)
 {
-	csC_info inf;
+	csC_info inf = c_info_();
 	VERIFY(foo);
-
+	switch (foo->kind) {
+    case csA_num:
+    	inf.kind = c_intconst_;
+    	inf.u.intconst = csA_immutnum(foo);
+    	inf.ty = csT_typeint();
+    	break;
+    case csA_char:
+    	VERIFY(0);
+    	break;
+    case csA_str:
+    	inf.kind = c_strconst_;
+    	inf.u.strconst = csA_immutstr(foo);
+    	inf.ty = csT_typestring();
+    	break;
+    case csA_bool:
+    	inf.kind = c_boolconst_;
+    	inf.u.intconst = csA_immutbool(foo);
+    	inf.ty = csT_typebool();
+    	break;
+    default:
+    	VERIFY(0);
+	}
 	return inf;
 }
-/*
-struct a_mutable_ {
-	csG_pos pos;
-	csS_symbol id; 
-	//CSastExpr expr;
-};*/
+
 static csC_info c_mutable_(csS_table vtab,csS_table ttab,csA_mutable foo)
 {
 	csC_info inf;
 	VERIFY(foo);
-
+	csS_symbol id = csA_mutid(foo);
+	csE_enventry e = csS_look(vtab, id);
+	VERIFY(e);
+	VERIFY(e->kind == csE_var);
+	inf.ty = e->u.var.type;
+	VERIFY(inf.ty);
+	inf.kind = c_addr_;
 	return inf;
 }

@@ -1,6 +1,19 @@
 #include "cstype.h"
 #include "csutil.h"
 
+csT_typelist csT_mktypelist()
+{
+	csT_typelist foo = csU_malloc(sizeof(*foo));
+	INIT_LIST_HEAD(&foo->next);
+	return foo;
+}
+
+void csT_typelistadd(csT_typelist head,csT_type type)
+{
+	VERIFY(head);VERIFY(head);
+	list_add_tail(&type->next, &head->next);
+}
+
 csG_bool CStypeEqual(csT_type foo,csT_type bar)
 {
 	VERIFY(foo);

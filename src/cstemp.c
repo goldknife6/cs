@@ -15,3 +15,10 @@ csT_temp csT_newtemp(void)
 	static int count;
 	csT_temp foo = csU_malloc(sizeof(*foo));
 }
+
+csT_label csT_namedlabel(csG_string name)
+{
+	VERIFY(name);
+	csS_symbol s = csS_mksymbol(name);
+	return s;
+}

@@ -199,7 +199,6 @@ extern csA_immutable csA_factorimmut(csA_factor foo);
 struct a_mutable_ {
 	csG_pos pos;
 	csS_symbol id; 
-	//CSastExpr expr;
 };
 extern csG_pos csA_mutpos(csA_mutable foo);
 extern csA_mutable csA_mkmut();
