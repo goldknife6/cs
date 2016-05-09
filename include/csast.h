@@ -141,7 +141,7 @@ extern void csA_setrelexprsum2(csA_relexpr foo,csA_sumexprlist sum2);
 extern csA_sumexprlist csA_relexprsum2(csA_relexpr foo);
 
 struct a_urelexpr_ {
-	csL_list next;
+	//csL_list next;
 	csG_bool flags; 
 	csA_relexpr rel;
 	csG_pos pos;

@@ -35,7 +35,7 @@ struct c_quad_ {
 		csC_lable,csC_assign,csC_goto,
 		csC_iffalse,csC_if,csC_add,csC_call,
 		csC_param,csC_minus,csC_multiply,
-		csC_divide,csC_sub
+		csC_divide,csC_sub,csC_or,csC_and
 	} kind;
 	csC_address arg1,arg2,res;
 	csL_list next;

@@ -423,7 +423,7 @@ csA_urelexpr csA_mkurelexpr()
 {
 	csA_urelexpr foo = csU_malloc(sizeof(*foo));
 	foo->flags = FALSE;
-	INIT_LIST_HEAD(&foo->next);
+	//INIT_LIST_HEAD(&foo->next);
 	return foo;
 }
 csA_relexpr csA_urelexprrel(csA_urelexpr foo)
