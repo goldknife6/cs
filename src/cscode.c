@@ -14,7 +14,7 @@ static void c_printquad(csC_quad quad);
 static csC_frag c_strfrag_(csF_access access,csC_info inf);
 
 static csC_info c_dec_(csS_table val,csS_table type,csA_dec list);
-static csC_info c_locdeclist(csS_table val,csS_table type,csA_locdec list);
+static csC_info c_locdeclist(csS_table vtab,csS_table ttab,csA_locdeclist list);
 static csC_info c_simplelist_(csS_table vtab,csS_table ttab,csA_simplelist foo);
 static csC_info c_simple_(csS_table vtab,csS_table ttab,csA_simpleexpr foo);
 static csC_info c_andlist_(csS_table vtab,csS_table ttab,csA_andlist foo);
@@ -224,11 +224,27 @@ static csC_info c_dec_(csS_table vtab,csS_table ttab,csA_dec foo)
 		VERIFY(ty);
 		csE_enventry e = csS_look(vtab, name);
 		VERIFY(!e);
-		csT_typelist list = c_mktypelist_(ttab,csA_decfunparamlist(foo));
+		csA_paramlist plist = csA_decfunparamlist(foo);
+		VERIFY(plist);
+		csT_typelist list = c_mktypelist_(ttab,plist);
 		csF_frame frame = csF_newframe(name);
 		csT_label lable = csT_namedlabel(csS_name(name));
 		e = csE_funentry(list,ty,name,frame);
 		csS_insert(vtab, name, e);
+		{
+			csS_beginscope(vtab);
+			csA_param pos = NULL;
+			list_for_each_entry(pos, plist, next) {
+				csF_access access = csF_alloclocal(frame);
+				csT_type type = csS_look(ttab, csA_paramtype(pos));
+				csS_symbol name = csA_paramname(pos);
+				csS_insert(vtab, name, csE_varentry(type,access,name));
+			}
+			csA_locdeclist list = csA_decfunloclist(foo);
+			if (list)
+				c_locdeclist(vtab,ttab,list);
+			csS_endscope(vtab);
+		}
 		break;
 	}
 	default:
@@ -237,9 +253,25 @@ static csC_info c_dec_(csS_table vtab,csS_table ttab,csA_dec foo)
 	return inf;
 }
 
-static csC_info c_locdeclist(csS_table val,csS_table type,csA_locdec list)
+static csC_info c_locdeclist(csS_table vtab,csS_table ttab,csA_locdeclist list)
 {
-
+	csC_info inf = c_info_();
+	VERIFY(list);
+	csA_locdec pos = NULL;
+	list_for_each_entry(pos, list, next) {
+		VERIFY(pos);
+		csS_symbol tyname = csA_locdectype(pos);
+		csS_symbol name = csA_locdecname(pos);
+		csT_type ty = csS_look(ttab, tyname);
+		VERIFY(ty);
+		csE_enventry e = csS_look(vtab, name);
+		VERIFY(!e);
+		csA_simplelist list = csA_locdecsimlist(pos);
+		if (list) {
+			
+		}
+	}
+	return inf;
 }
 
 static csC_info c_simplelist_(csS_table vtab,csS_table ttab,csA_simplelist foo)
