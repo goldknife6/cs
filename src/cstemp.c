@@ -22,3 +22,9 @@ csT_label csT_namedlabel(csG_string name)
 	csS_symbol s = csS_mksymbol(name);
 	return s;
 }
+
+void printTemp(csT_temp h)
+{
+	VERIFY(h);
+	fprintf(debugs, "T%d",h->num);
+}

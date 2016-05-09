@@ -4,14 +4,22 @@
 #include "csutil.h"
 #include <string.h>
 csC_fraglist fraglist = LIST_HEAD_INIT(fraglist);
-static csC_frag curfrag;
+static csC_quadlist quadlist;
+static csF_frame curframe;
 
 static csC_info c_info_();
-static void c_fraglistadd_();
-static void c_quadlistadd_(csC_quadlist head,csC_quad quad);
-static void c_printfrag(csC_frag frag);
-static void c_printquad(csC_quad quad);
-static csC_frag c_strfrag_(csF_access access,csC_info inf);
+static csC_quadlist c_quadlist_();
+static csC_frag c_frag_(csF_access access,csC_info inf);
+static csC_frag c_procfrag_(csC_quadlist body,csF_frame frame);
+static csC_address c_address_();
+static csC_address c_addressint_(int intconst);
+static csC_address c_addressstr_(csG_string strconst);
+static csC_address c_addressbool_(csG_bool boolconst);
+static csC_address c_addressenv_(csE_enventry eval);
+static csC_address c_addresstemp_(csT_temp tmp);
+static csC_address c_addresslable_(csT_label lab);
+static csC_quad c_quad_(csC_address arg1,csC_address arg2,csC_address res,c_opkind_ op);
+
 
 static csC_info c_dec_(csS_table val,csS_table type,csA_dec list);
 static csC_info c_locdeclist(csS_table vtab,csS_table ttab,csA_locdeclist list);
@@ -27,15 +35,6 @@ static csC_info c_uexpr_(csS_table vtab,csS_table ttab,csA_uexpr foo);
 static csC_info c_factor_(csS_table vtab,csS_table ttab,csA_factor foo);
 static csC_info c_immutable_(csS_table vtab,csS_table ttab,csA_immutable foo);
 static csC_info c_mutable_(csS_table vtab,csS_table ttab,csA_mutable foo);
-
-
-void csC_printcode()
-{
-	csC_frag pos = NULL;
-	list_for_each_entry(pos, &fraglist, next) {
-		c_printfrag(pos);
-	}
-}
 
 static csC_info c_infoconst_(csT_type ty)
 {
@@ -65,84 +64,6 @@ static csC_info c_info_()
 	return inf;
 }
 
-static void c_quadlistadd_(csC_quadlist head,csC_quad quad)
-{
-	VERIFY(quad);
-	list_add_tail(&quad->next, &head);
-}
-
-static void c_printquad(csC_quad quad)
-{
-	VERIFY(quad);
-
-	switch (quad->kind) {
- 	case csC_lable:
- 		VERIFY(0);
- 	case csC_assign:
- 		VERIFY(0);
- 	case csC_goto:
- 		VERIFY(0);
- 	case csC_iffalse:
- 		VERIFY(0);
- 	case csC_if:
- 		VERIFY(0);
- 	case csC_add:
- 		VERIFY(0);
- 	case csC_call:
- 		VERIFY(0);
- 	case csC_param:
- 		VERIFY(0);
- 	case csC_minus:
- 		VERIFY(0);
- 	case csC_multiply:
- 		VERIFY(0);
- 	case csC_divide:
- 		VERIFY(0);
- 	case csC_sub:
- 		VERIFY(0);
- 	default:
-		VERIFY(0);
-	}
-}
-
-static void c_fraglistadd_()
-{
-	VERIFY(curfrag);
-	list_add_tail(&curfrag->next, &fraglist);
-	curfrag = NULL;
-}
-
-static void c_printfrag(csC_frag frag)
-{
-	if (!frag) return;
-	csF_access acc = NULL;
-	switch (frag->kind) {
-	case csC_strfrag:
-		acc = frag->access;
-		VERIFY(acc);
-		fprintf(debugs, "static string:%s ", frag->u.strv);
-		fprintf(debugs, "%d %d\n",acc->kind,acc->u.offset);
-		break;
-	case csC_intfrag:
-		acc = frag->access;
-		VERIFY(acc);
-		fprintf(debugs, "static int:%d ", frag->u.intv);
-		fprintf(debugs, "%d %d\n",acc->kind,acc->u.offset);
-		break;
-	case csC_boolfrag:
-		acc = frag->access;
-		VERIFY(acc);
-		fprintf(debugs, "static bool:%d ", frag->u.boolv);
-		fprintf(debugs, "%d %d\n",acc->kind,acc->u.offset);
-		break;
-	case csC_procfrag:
-		VERIFY(0);
-		break;
-	default:
-		VERIFY(0);
-	}
-}
-
 static csC_frag c_frag_(csF_access access,csC_info inf)
 {
 	csC_frag foo = csU_malloc(sizeof(*foo));
@@ -164,7 +85,18 @@ static csC_frag c_frag_(csF_access access,csC_info inf)
 		VERIFY(0);
 	}
 	foo->access = access;
-	curfrag = foo;
+	list_add_tail(&foo->next, &fraglist);
+	return foo;
+}
+
+static csC_frag c_procfrag_(csC_quadlist body,csF_frame frame)
+{
+	VERIFY(body);VERIFY(frame);
+	csC_frag foo = csU_malloc(sizeof(*foo));
+	foo->kind = csC_procfrag;
+	foo->u.proc.body = body;
+	foo->u.proc.frame = frame;
+	list_add_tail(&foo->next, &fraglist);
 	return foo;
 }
 
@@ -181,6 +113,29 @@ static csT_typelist c_mktypelist_(csS_table ttab,csA_paramlist foo)
 	}
 	return list;
 }
+
+static csC_address c_infotoaddr(csC_info inf)
+{
+	csC_address addr;
+	switch (inf.kind) {
+		case c_addr_:
+			addr = inf.u.addr;
+			break;
+		case c_intconst_:
+			addr = c_addressint_(inf.u.intconst);
+			break;
+		case c_strconst_:
+			addr = c_addressstr_(inf.u.strconst);
+			break;
+		case c_boolconst_:
+			addr = c_addressbool_(inf.u.boolconst);
+			break;
+		default:
+			VERIFY(0);
+	}
+	return addr;
+}
+
 csC_info c_declist_(csS_table val,csS_table type,csA_declist list)
 {
 	csC_info inf = c_info_();
@@ -198,6 +153,7 @@ static csC_info c_dec_(csS_table vtab,csS_table ttab,csA_dec foo)
 	csC_info inf = c_info_();
 	switch (foo->kind) {
 	case csA_vardec:{
+		quadlist = NULL;
 		csS_symbol tyname = csA_decvartype(foo);
 		csS_symbol name = csA_decvarname(foo);
 		csT_type ty = csS_look(ttab, tyname);
@@ -214,7 +170,6 @@ static csC_info c_dec_(csS_table vtab,csS_table ttab,csA_dec foo)
 		} else {
 			c_frag_(access, c_infoconst_(ty));
 		}
-		c_fraglistadd_();
 		break;
 	}
 	case csA_fundec:{
@@ -228,6 +183,7 @@ static csC_info c_dec_(csS_table vtab,csS_table ttab,csA_dec foo)
 		VERIFY(plist);
 		csT_typelist list = c_mktypelist_(ttab,plist);
 		csF_frame frame = csF_newframe(name);
+		curframe = frame;
 		csT_label lable = csT_namedlabel(csS_name(name));
 		e = csE_funentry(list,ty,name,frame);
 		csS_insert(vtab, name, e);
@@ -240,11 +196,14 @@ static csC_info c_dec_(csS_table vtab,csS_table ttab,csA_dec foo)
 				csS_symbol name = csA_paramname(pos);
 				csS_insert(vtab, name, csE_varentry(type,access,name));
 			}
+			c_quadlist_();
+			c_quad_(c_address_(),c_address_(),c_addresslable_(lable),csC_lable);
 			csA_locdeclist list = csA_decfunloclist(foo);
 			if (list)
 				c_locdeclist(vtab,ttab,list);
 			csS_endscope(vtab);
 		}
+		c_procfrag_(quadlist,frame);
 		break;
 	}
 	default:
@@ -252,6 +211,7 @@ static csC_info c_dec_(csS_table vtab,csS_table ttab,csA_dec foo)
 	}
 	return inf;
 }
+
 
 static csC_info c_locdeclist(csS_table vtab,csS_table ttab,csA_locdeclist list)
 {
@@ -266,10 +226,18 @@ static csC_info c_locdeclist(csS_table vtab,csS_table ttab,csA_locdeclist list)
 		VERIFY(ty);
 		csE_enventry e = csS_look(vtab, name);
 		VERIFY(!e);
+		csF_access access = csF_alloclocal(curframe);
 		csA_simplelist list = csA_locdecsimlist(pos);
 		if (list) {
-			
+			csC_info tmp = c_simplelist_(vtab,ttab,list);
+			csE_enventry env = csE_varentry(ty,access,name);
+
+			csC_address arg1 = c_infotoaddr(tmp);
+			csC_address arg2 = c_address_();
+			csC_address res = c_addressenv_(env);
+			c_quad_(arg1,arg2,res,csC_assign);
 		}
+		csS_insert(vtab, name, csE_varentry(ty,access,name));
 	}
 	return inf;
 }
@@ -365,9 +333,14 @@ static csC_info c_sumexprlist_(csS_table vtab,csS_table ttab,csA_sumexprlist foo
 				default:
 					VERIFY(0);
 				}
-				
 			} else if (tmp.kind == c_strconst_ && inf.kind == c_strconst_) {
 				VERIFY(0);
+			} else {
+				csC_address arg1 = c_infotoaddr(inf);
+				csC_address arg2 = c_infotoaddr(tmp);
+				csC_address res = c_addresstemp_(csT_newtemp());
+				c_quad_(arg1,arg2,res,csC_add);
+				tmp.u.addr = res;
 			}
 		}
 		op = csA_sumexprop(pos);
@@ -496,5 +469,77 @@ static csC_info c_mutable_(csS_table vtab,csS_table ttab,csA_mutable foo)
 	inf.ty = e->u.var.type;
 	VERIFY(inf.ty);
 	inf.kind = c_addr_;
+	inf.u.addr = c_addressenv_(e);
 	return inf;
+}
+
+static csC_address c_address_()
+{
+	csC_address addr;
+	memset(&addr,0,sizeof(addr));
+	addr.kind = csC_empty;
+	return addr;
+}
+static csC_address c_addressint_(int intconst)
+{
+	csC_address addr;
+	addr.kind = csC_intconst;
+	addr.u.ival = intconst;
+	return addr;
+}
+static csC_address c_addressstr_(csG_string strconst)
+{
+	csC_address addr;
+	addr.kind = csC_strconst;
+	addr.u.str = strconst;
+	return addr;
+}
+static csC_address c_addressbool_(csG_bool boolconst)
+{
+	csC_address addr;
+	addr.kind = csC_boolconst;
+	addr.u.bval = boolconst;
+	return addr;
+}
+static csC_address c_addressenv_(csE_enventry eval)
+{
+	csC_address addr;
+	addr.kind = csC_env;
+	addr.u.eval = eval;
+	VERIFY(eval);
+	return addr;
+}
+static csC_address c_addresstemp_(csT_temp tmp)
+{
+	csC_address addr;
+	addr.kind = csC_temp;
+	addr.u.tmp = tmp;
+	return addr;
+}
+static csC_address c_addresslable_(csT_label lab)
+{
+	VERIFY(lab);
+	csC_address addr;
+	addr.kind = caC_lable;
+	addr.u.lab = lab;
+	return addr;
+}
+static csC_quad c_quad_(csC_address arg1,csC_address arg2,csC_address res,c_opkind_ op)
+{
+	csC_quad foo = csU_malloc(sizeof(*foo));
+	foo->arg1 = arg1;
+	foo->arg2 = arg2;
+	foo->res = res;
+	foo->kind = op;
+	INIT_LIST_HEAD(&foo->next);
+	if(quadlist)
+		list_add_tail(&foo->next, quadlist);
+	return foo;
+}
+static csC_quadlist c_quadlist_()
+{
+	csC_quadlist foo = csU_malloc(sizeof(*foo));
+	INIT_LIST_HEAD(foo);
+	quadlist = foo;
+	return foo;
 }

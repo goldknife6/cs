@@ -14,11 +14,10 @@ typedef csS_symbol csT_label;
 
 extern csT_label csT_newlabel(void);
 extern csT_label csT_namedlabel(csG_string name);
+
+extern void printTemp(csT_temp h);
 /*
 char* CStmpLabelstring(csT_label s);
-
-
-void printTemp(CStemp h);
 void printLable(CSlabel h);
 */
 #endif/*CS_TEMP_H*/

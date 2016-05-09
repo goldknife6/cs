@@ -6,8 +6,9 @@
 #include "csenv.h"
 #include "cslist.h"
 #include "csframe.h"
+#include <string.h>
 
-typedef csL_list csC_quadlist;
+typedef csL_list *csC_quadlist;
 typedef struct c_quad_ *csC_quad;
 typedef struct c_address_ csC_address;
 typedef csL_list csC_fraglist;
@@ -27,16 +28,18 @@ struct c_address_ {
 		csG_bool bval;
 		csE_enventry eval;
 		csT_temp tmp;
+		csT_label lab;
 	} u;
 };
+typedef enum {
+	csC_lable,csC_assign,csC_goto,
+	csC_iffalse,csC_if,csC_add,csC_call,
+	csC_param,csC_minus,csC_multiply,
+	csC_divide,csC_sub,csC_or,csC_and
+} c_opkind_;
 
 struct c_quad_ {
-	enum {
-		csC_lable,csC_assign,csC_goto,
-		csC_iffalse,csC_if,csC_add,csC_call,
-		csC_param,csC_minus,csC_multiply,
-		csC_divide,csC_sub,csC_or,csC_and
-	} kind;
+	c_opkind_ kind;
 	csC_address arg1,arg2,res;
 	csL_list next;
 };
@@ -47,6 +50,7 @@ struct c_frag_ {
 		csC_procfrag ,csC_strfrag,
 		csC_intfrag , csC_boolfrag
 	} kind;
+	csS_symbol name;
 	csF_access access;
 	union {
 		csG_string strv;
@@ -73,6 +77,6 @@ typedef struct c_info_ {
 	} u;
 } csC_info;
 
+
 extern csC_info c_declist_(csS_table val,csS_table type,csA_declist list);
-extern void csC_printcode();
 #endif/*!CS_CODE_H*/
