@@ -33,8 +33,8 @@ int main(int argc, char *argv[])
 	//testhash();
 	//testlex();
 	//testsym();
-	testparser();
-	//testcode();
+	//testparser();
+	testcode();
 	return 0;
 }
 

@@ -682,7 +682,7 @@ void csA_setexprasgnexpr(csA_expr expr,csA_expr asgn)
 {
 	VERIFY(expr);VERIFY(asgn);
 	expr->kind = csA_asgn_;
-	expr->u.asgn.expr = expr;
+	expr->u.asgn.expr = asgn;
 }
 void csA_setexprasgnmut(csA_expr expr,csA_mutable mut)
 {

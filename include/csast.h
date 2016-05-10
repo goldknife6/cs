@@ -297,7 +297,7 @@ struct a_stmt_ {
 		csA_exprlist exprList;
 
 		/*compoundstmt varList and stmtList may null*/
-		struct { csA_locdeclist varlist;csA_stmtlist stmtlist ;} comStmt;
+		struct { csA_locdeclist varlist;csA_stmtlist stmtlist ;} comstmt;
 
 		/*ifStmt → if (exprList) statement [else statement]*/
 		struct { csA_exprlist list;csA_stmt ifs,elses;} ifstmt;

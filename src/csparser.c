@@ -195,6 +195,8 @@ loop:
 			goto loop;
 		}
 		break;
+	case csL_RPAREN:
+		return foo;
 	default:
 		VERIFY(0);
 	}
@@ -216,6 +218,7 @@ static csA_expr p_expr_(void)
 	case csL_ID:
 		if (!foo) foo = csA_mkexpr();
 		bar = p_simplelist_();
+		VERIFY(bar);
 		csA_setexprlist(foo,bar);
 		break;
 	case csL_DOLLAR:
@@ -225,6 +228,7 @@ static csA_expr p_expr_(void)
 		csA_setexprasgnmut(foo,mut);
 		MATCH(csL_ASSIGN,"missing =",sync);
 		e = p_expr_();
+		VERIFY(e);
 		csA_setexprasgnexpr(foo,e);
 		break;
 	default:
@@ -613,21 +617,43 @@ static csA_stmt p_stmt_(void)
 		break;
 	}
 	case csL_SEMICOLON:/*empty stmt*/
-		VERIFY(0);
+		foo = csA_mkstmt();
+		foo->kind = csA_exprstmt;
+		foo->u.exprList = NULL;
 		MATCH(csL_SEMICOLON,"missing ;",sync);
 		break;
-	case csL_IF:/*ifStmt → if ( exprList ) stmt [ else stmt ]*/
-		VERIFY(0);
+	case csL_IF:{/*ifStmt → if ( exprList ) stmt [ else stmt ]*/
+		foo = csA_mkstmt();
+		foo->kind = csA_ifstmt;
+		MATCH(csL_IF,"missing if",sync);
+		MATCH(csL_LPAREN,"missing (",sync);
+		csA_exprlist list = p_exprlist_();
+		foo->u.ifstmt.list = list;
+		MATCH(csL_RPAREN,"missing )",sync);
+		foo->u.ifstmt.ifs = p_stmt_();
+		if (token.kind == csL_ELSE) {
+			MATCH(csL_ELSE,"missing else",sync);
+			foo->u.ifstmt.elses = p_stmt_();
+		}
 		break;
+	}
 	case csL_FOR:
 		VERIFY(0);
 		break;
 	case csL_WHILE:
 		VERIFY(0);
 		break;
-	case csL_LBRACE:
-		VERIFY(0);
+	case csL_LBRACE:{
+		MATCH(csL_LBRACE,"missing {",sync);
+		foo = csA_mkstmt();
+		foo->kind = csA_compoundstmt;
+		csA_locdeclist var = p_locvardeclist_();
+		csA_stmtlist stmt = p_stmtlist_();
+		foo->u.comstmt.varlist = var;
+		foo->u.comstmt.stmtlist = stmt;
+		MATCH(csL_RBRACE,"missing }",sync);
 		break;
+	}
 	case csL_RETURN:
 		VERIFY(0);
 		break;

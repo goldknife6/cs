@@ -316,11 +316,22 @@ static void p_stmt_(csA_stmt foo)
 	switch (foo->kind) {
 	case csA_exprstmt:
 		p_exprlist_(foo->u.exprList);
-		fprintf(debugs, ";");
+		fprintf(debugs, ";\n");
 		break;
 	case csA_compoundstmt:
+		fprintf(debugs, "{\n");
+		p_locdeclist_(foo->u.comstmt.varlist);
+		p_stmtlist_(foo->u.comstmt.stmtlist);
+		fprintf(debugs, "}\n");
 		break;
 	case csA_ifstmt:
+		fprintf(debugs, "if(");
+		p_exprlist_(foo->u.ifstmt.list);
+		fprintf(debugs, ") ");
+		p_stmt_(foo->u.ifstmt.ifs);
+		if (foo->u.ifstmt.elses)
+			fprintf(debugs, "else ");
+		p_stmt_(foo->u.ifstmt.elses);
 		break;
 	case csA_whilestmt:
 		break;
@@ -333,7 +344,6 @@ static void p_stmt_(csA_stmt foo)
 	default:
 		VERIFY(0);
 	}
-	fprintf(debugs, "\n");
 }
 static void p_expr_(csA_expr foo)
 {
@@ -345,6 +355,7 @@ static void p_expr_(csA_expr foo)
 	case csA_asgn_:
 		fprintf(debugs, "$");
 		p_mutable_(csA_exprmut(foo));
+		fprintf(debugs, " = ");
 		p_expr_(csA_exprexpr(foo));
 		break;
 	default:

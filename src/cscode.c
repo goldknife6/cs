@@ -37,6 +37,12 @@ static csC_info c_uexpr_(csS_table vtab,csS_table ttab,csA_uexpr foo);
 static csC_info c_factor_(csS_table vtab,csS_table ttab,csA_factor foo);
 static csC_info c_immutable_(csS_table vtab,csS_table ttab,csA_immutable foo);
 static csC_info c_mutable_(csS_table vtab,csS_table ttab,csA_mutable foo);
+static csC_info c_stmtlist_(csS_table vtab,csS_table ttab,csA_stmtlist foo);
+static csC_info c_exprlist_(csS_table vtab,csS_table ttab,csA_exprlist foo);
+static csC_info c_expr_(csS_table vtab,csS_table ttab,csA_expr foo);
+
+
+
 
 static csC_info c_infoconst_(csT_type ty)
 {
@@ -203,6 +209,9 @@ static csC_info c_dec_(csS_table vtab,csS_table ttab,csA_dec foo)
 			csA_locdeclist list = csA_decfunloclist(foo);
 			if (list)
 				c_locdeclist(vtab,ttab,list);
+			csA_stmtlist stmt = csA_decfunstmtlist(foo);
+			if (stmt)
+				c_stmtlist_(vtab,ttab,stmt);
 			csS_endscope(vtab);
 		}
 		c_procfrag_(quadlist,frame);
@@ -240,6 +249,62 @@ static csC_info c_locdeclist(csS_table vtab,csS_table ttab,csA_locdeclist list)
 			c_quad_(arg1,arg2,res,csC_assign);
 		}
 		csS_insert(vtab, name, csE_varentry(ty,access,name));
+	}
+	return inf;
+}
+
+static csC_info c_expr_(csS_table vtab,csS_table ttab,csA_expr foo)
+{
+	VERIFY(foo);
+	csC_info inf = c_info_();
+	switch (foo->kind) {
+	case csA_sim_:
+		VERIFY(csA_exprsimplelist(foo));
+		inf = c_simplelist_(vtab,ttab,csA_exprsimplelist(foo));
+		break;
+	case csA_asgn_: {
+		VERIFY(csA_exprmut(foo));
+		inf = c_mutable_(vtab,ttab,csA_exprmut(foo));
+		csC_address res = c_infotoaddr(inf);
+		csC_address arg2 = c_address_();
+		VERIFY(csA_exprexpr(foo));
+		inf = c_expr_(vtab,ttab,csA_exprexpr(foo));
+		csC_address arg1 = c_infotoaddr(inf);
+		c_quad_(arg1,arg2,res,csC_assign);
+		break;
+	}
+	default:
+		VERIFY(0);
+	}
+	return inf;
+}
+static csC_info c_exprlist_(csS_table vtab,csS_table ttab,csA_exprlist foo)
+{
+	csC_info inf = c_info_();
+	csA_expr pos;
+	VERIFY(foo);
+	list_for_each_entry(pos, foo, next) {
+		inf = c_expr_(vtab,ttab,pos);
+	}
+	return inf;
+}
+
+static csC_info c_stmtlist_(csS_table vtab,csS_table ttab,csA_stmtlist foo)
+{
+	csC_info inf = c_info_();
+	csA_stmt pos;
+	if (!foo) VERIFY(0);
+	list_for_each_entry(pos, foo, next) {
+		switch (pos->kind) {
+		case csA_exprstmt:
+			if (pos->u.exprList)
+				inf = c_exprlist_(vtab,ttab,pos->u.exprList);
+			break;
+		case csA_ifstmt:
+			break;
+		default:
+			VERIFY(0);
+		}
 	}
 	return inf;
 }
@@ -489,6 +554,7 @@ static csC_address c_address_()
 	addr.kind = csC_empty;
 	return addr;
 }
+
 static csC_address c_addressint_(int intconst)
 {
 	csC_address addr;
@@ -496,6 +562,7 @@ static csC_address c_addressint_(int intconst)
 	addr.u.ival = intconst;
 	return addr;
 }
+
 static csC_address c_addressstr_(csG_string strconst)
 {
 	csC_address addr;
@@ -503,6 +570,7 @@ static csC_address c_addressstr_(csG_string strconst)
 	addr.u.str = strconst;
 	return addr;
 }
+
 static csC_address c_addressbool_(csG_bool boolconst)
 {
 	csC_address addr;
@@ -510,6 +578,7 @@ static csC_address c_addressbool_(csG_bool boolconst)
 	addr.u.bval = boolconst;
 	return addr;
 }
+
 static csC_address c_addressenv_(csE_enventry eval)
 {
 	csC_address addr;
@@ -518,6 +587,7 @@ static csC_address c_addressenv_(csE_enventry eval)
 	VERIFY(eval);
 	return addr;
 }
+
 static csC_address c_addresstemp_(csT_temp tmp)
 {
 	csC_address addr;
@@ -525,6 +595,7 @@ static csC_address c_addresstemp_(csT_temp tmp)
 	addr.u.tmp = tmp;
 	return addr;
 }
+
 static csC_address c_addresslable_(csT_label lab)
 {
 	VERIFY(lab);
@@ -533,6 +604,7 @@ static csC_address c_addresslable_(csT_label lab)
 	addr.u.lab = lab;
 	return addr;
 }
+
 static csC_quad c_quad_(csC_address arg1,csC_address arg2,csC_address res,c_opkind_ op)
 {
 	csC_quad foo = csU_malloc(sizeof(*foo));
@@ -545,6 +617,7 @@ static csC_quad c_quad_(csC_address arg1,csC_address arg2,csC_address res,c_opki
 		list_add_tail(&foo->next, quadlist);
 	return foo;
 }
+
 static csC_quadlist c_quadlist_()
 {
 	csC_quadlist foo = csU_malloc(sizeof(*foo));
@@ -573,6 +646,7 @@ static csC_info c_opdispatch_(csA_op op,csC_info inf,csC_info tmp)
 	}
 	return tmp;
 }
+
 static void c_addrdispatch_(csA_op op,csC_address arg1,csC_address arg2,csC_address res)
 {
 	switch (op) {
