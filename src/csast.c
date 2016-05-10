@@ -230,32 +230,32 @@ csA_immutable csA_factorimmut(csA_factor foo)
 /**************************************************************/
 csS_symbol csA_immutcallid(csA_immutable foo)
 {
-	VERIFY(foo->kind == csA_call);
+	VERIFY(foo->kind == csA_call_);
 	return foo->u.call.id;
 }
 csA_arglist csA_immutcallargs(csA_immutable foo)
 {
-	VERIFY(foo->kind == csA_call);
+	VERIFY(foo->kind == csA_call_);
 	return foo->u.call.args;
 }
 csG_bool csA_immutbool(csA_immutable foo)
 {
-	VERIFY(foo->kind == csA_bool);
+	VERIFY(foo->kind == csA_bool_);
 	return foo->u.val;
 }
 int csA_immutchar(csA_immutable foo)
 {
-	VERIFY(foo->kind == csA_char);
+	VERIFY(foo->kind == csA_char_);
 	return foo->u.val;
 }
 int csA_immutnum(csA_immutable foo)
 {
-	VERIFY(foo->kind == csA_num);
+	VERIFY(foo->kind == csA_num_);
 	return foo->u.val;
 }
 csG_string csA_immutstr(csA_immutable foo)
 {
-	VERIFY(foo->kind == csA_str);
+	VERIFY(foo->kind == csA_str_);
 	return foo->u.str;
 }
 csG_pos csA_immutpos(csA_immutable foo)
@@ -271,37 +271,37 @@ csA_immutable csA_mkimmut()
 void csA_setimmutstr(csA_immutable foo,csG_string str)
 {
 	VERIFY(foo);VERIFY(str);
-	foo->kind = csA_str;
+	foo->kind = csA_str_;
 	foo->u.str = str;
 }
 void csA_setimmutnum(csA_immutable foo,int num)
 {
 	VERIFY(foo);
-	foo->kind = csA_num;
+	foo->kind = csA_num_;
 	foo->u.val = num;
 }
 void csA_setimmutchar(csA_immutable foo,int c)
 {
 	VERIFY(foo);
-	foo->kind = csA_char;
+	foo->kind = csA_char_;
 	foo->u.val = c;
 }
 void csA_setimmutbool(csA_immutable foo,csG_bool b)
 {
 	VERIFY(foo);
-	foo->kind = csA_bool;
+	foo->kind = csA_bool_;
 	foo->u.val = b;
 }
 void csA_setimmutcallargs(csA_immutable foo,csA_arglist args)
 {
 	VERIFY(foo);
-	foo->kind = csA_call;
+	foo->kind = csA_call_;
 	foo->u.call.args = args;
 }
 void csA_setimmutcallid(csA_immutable foo,csS_symbol id)
 {
 	VERIFY(foo);VERIFY(id);
-	foo->kind = csA_call;
+	foo->kind = csA_call_;
 	foo->u.call.id = id;
 }
 /**************************************************************/
@@ -622,4 +622,58 @@ void csA_locvardecadd(csA_simplelist list,csA_locdec dec)
 {
 	VERIFY(dec);VERIFY(list);
 	list_add_tail(&dec->next, list);
+}
+/**************************************************************/
+csA_expr csA_mkexpr()
+{
+	csA_expr foo = csU_malloc(sizeof(*foo));
+	INIT_LIST_HEAD(&foo->next);
+	return foo;
+}
+csA_exprlist csA_mkexprlist()
+{
+	csA_exprlist foo = csU_malloc(sizeof(*foo));
+	INIT_LIST_HEAD(foo);
+	return foo;
+}
+void csA_exprlistadd(csA_exprlist head,csA_expr bar)
+{
+	VERIFY(head);VERIFY(bar);
+	list_add_tail(&bar->next, head);
+}
+csA_simplelist csA_exprsimplelist(csA_expr expr)
+{
+	VERIFY(expr);
+	VERIFY(expr->kind == csA_sim_);
+	return expr->u.list;
+}
+csA_mutable csA_exprmut(csA_expr expr)
+{
+	VERIFY(expr);
+	VERIFY(expr->kind == csA_asgn_);
+	return expr->u.asgn.mut;
+}
+csA_expr csA_exprexpr(csA_expr expr)
+{
+	VERIFY(expr);
+	VERIFY(expr->kind == csA_asgn_);
+	return expr->u.asgn.expr;
+}
+void csA_setexprlist(csA_expr expr,csA_simplelist list)
+{
+	VERIFY(expr);VERIFY(list);
+	expr->kind = csA_sim_;
+	expr->u.list = list;
+}
+void csA_setexprasgnexpr(csA_expr expr,csA_expr asgn)
+{
+	VERIFY(expr);VERIFY(asgn);
+	expr->kind = csA_asgn_;
+	expr->u.asgn.expr = expr;
+}
+void csA_setexprasgnmut(csA_expr expr,csA_mutable mut)
+{
+	VERIFY(expr);VERIFY(mut);
+	expr->kind = csA_asgn_;
+	expr->u.asgn.mut = mut;
 }

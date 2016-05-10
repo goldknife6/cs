@@ -14,6 +14,8 @@ csT_temp csT_newtemp(void)
 {
 	static int count;
 	csT_temp foo = csU_malloc(sizeof(*foo));
+	foo->num = count++;
+	return foo;
 }
 
 csT_label csT_namedlabel(csG_string name)

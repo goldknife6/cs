@@ -108,16 +108,16 @@ static void p_immutable_(csA_immutable foo)
 {
 	if (!foo) return;
 	switch (foo->kind) {
-	case csA_num:
+	case csA_num_:
 		fprintf(debugs,"%d", csA_immutnum(foo));
 		break;
-	case csA_char:
+	case csA_char_:
 		fprintf(debugs,"%c", csA_immutchar(foo));
 		break;
-	case csA_str:
+	case csA_str_:
 		fprintf(debugs,"%s", csA_immutstr(foo));
 		break;
-	case csA_bool:
+	case csA_bool_:
 		fprintf(debugs,"%s", csA_immutbool(foo) ? "true" : "false");
 		break;
 	default:

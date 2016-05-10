@@ -127,6 +127,20 @@ static void c_printquad(csC_quad quad)
  		fprintf(debugs, " - ");
  		c_printaddr(quad->arg2);
  		break;
+ 	case csC_or:
+ 		c_printaddr(quad->res);
+ 		fprintf(debugs, " = ");
+ 		c_printaddr(quad->arg1);
+ 		fprintf(debugs, " | ");
+ 		c_printaddr(quad->arg2);
+ 		break;
+ 	case csC_and:
+ 		c_printaddr(quad->res);
+ 		fprintf(debugs, " = ");
+ 		c_printaddr(quad->arg1);
+ 		fprintf(debugs, " & ");
+ 		c_printaddr(quad->arg2);
+ 		break;
  	default:
 		VERIFY(0);
 	}

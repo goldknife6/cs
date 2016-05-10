@@ -19,12 +19,14 @@ static csC_address c_addressenv_(csE_enventry eval);
 static csC_address c_addresstemp_(csT_temp tmp);
 static csC_address c_addresslable_(csT_label lab);
 static csC_quad c_quad_(csC_address arg1,csC_address arg2,csC_address res,c_opkind_ op);
+static csC_info c_opdispatch_(csA_op op,csC_info inf,csC_info tmp);
+static void c_addrdispatch_(csA_op op,csC_address arg1,csC_address arg2,csC_address res);
+
 
 
 static csC_info c_dec_(csS_table val,csS_table type,csA_dec list);
 static csC_info c_locdeclist(csS_table vtab,csS_table ttab,csA_locdeclist list);
 static csC_info c_simplelist_(csS_table vtab,csS_table ttab,csA_simplelist foo);
-static csC_info c_simple_(csS_table vtab,csS_table ttab,csA_simpleexpr foo);
 static csC_info c_andlist_(csS_table vtab,csS_table ttab,csA_andlist foo);
 static csC_info c_andexpr_(csS_table vtab,csS_table ttab,csA_andexpr foo);
 static csC_info c_urelexpr_(csS_table vtab,csS_table ttab,csA_urelexpr foo);
@@ -152,7 +154,7 @@ static csC_info c_dec_(csS_table vtab,csS_table ttab,csA_dec foo)
 	VERIFY(foo);
 	csC_info inf = c_info_();
 	switch (foo->kind) {
-	case csA_vardec:{
+	case csA_vardec: {
 		quadlist = NULL;
 		csS_symbol tyname = csA_decvartype(foo);
 		csS_symbol name = csA_decvarname(foo);
@@ -224,7 +226,7 @@ static csC_info c_locdeclist(csS_table vtab,csS_table ttab,csA_locdeclist list)
 		csS_symbol name = csA_locdecname(pos);
 		csT_type ty = csS_look(ttab, tyname);
 		VERIFY(ty);
-		csE_enventry e = csS_look(vtab, name);
+		csE_enventry e = csS_looktop(vtab, name);
 		VERIFY(!e);
 		csF_access access = csF_alloclocal(curframe);
 		csA_simplelist list = csA_locdecsimlist(pos);
@@ -244,41 +246,56 @@ static csC_info c_locdeclist(csS_table vtab,csS_table ttab,csA_locdeclist list)
 
 static csC_info c_simplelist_(csS_table vtab,csS_table ttab,csA_simplelist foo)
 {
-	csC_info inf;
+	csC_info inf = c_info_();
 	csA_simpleexpr pos;
 	if (!foo) VERIFY(0);
 	list_for_each_entry(pos, foo, next) {
-		inf = c_simple_(vtab,ttab,pos);
+		csC_info tmp = c_andlist_(vtab,ttab,csA_simpleexprand(pos));
+		if (inf.kind != c_empty_) {
+			VERIFY(tmp.ty);
+			VERIFY(tmp.ty->kind == csT_bool);
+			if (tmp.kind == c_boolconst_ && inf.kind == c_boolconst_)
+				tmp.u.boolconst = inf.u.boolconst || tmp.u.boolconst;
+			else {
+				csC_address arg1 = c_infotoaddr(inf);
+				csC_address arg2 = c_infotoaddr(tmp);
+				csC_address res = c_addresstemp_(csT_newtemp());
+				c_quad_(arg1,arg2,res,csC_or);
+				tmp.u.addr = res;
+				tmp.kind = c_addr_;
+			}
+		}
+		inf = tmp;
 	}
-	return inf;
-}
-
-static csC_info c_simple_(csS_table vtab,csS_table ttab,csA_simpleexpr foo)
-{
-	csC_info inf;
-	VERIFY(foo);
-	inf = c_andlist_(vtab,ttab,csA_simpleexprand(foo));
 	return inf;
 }
 
 static csC_info c_andlist_(csS_table vtab,csS_table ttab,csA_andlist foo)
 {
-	csC_info inf;
+	csC_info inf = c_info_();
 	csA_andexpr pos;
 	if (!foo) VERIFY(0);
 	list_for_each_entry(pos, foo, next) {
-		inf = c_andexpr_(vtab,ttab,pos);
+		csC_info tmp = c_urelexpr_(vtab,ttab,csA_andexprurel(pos));
+		if (inf.kind != c_empty_) {
+			VERIFY(tmp.ty);
+			VERIFY(tmp.ty->kind == csT_bool);
+			if (tmp.kind == c_boolconst_ && inf.kind == c_boolconst_)
+				tmp.u.boolconst = inf.u.boolconst && tmp.u.boolconst;
+			else {
+				csC_address arg1 = c_infotoaddr(inf);
+				csC_address arg2 = c_infotoaddr(tmp);
+				csC_address res = c_addresstemp_(csT_newtemp());
+				c_quad_(arg1,arg2,res,csC_and);
+				tmp.u.addr = res;
+				tmp.kind = c_addr_;
+			}
+		} 
+		inf = tmp;
 	}
 	return inf;
 }
 
-static csC_info c_andexpr_(csS_table vtab,csS_table ttab,csA_andexpr foo)
-{
-	csC_info inf;
-	VERIFY(foo);
-	inf = c_urelexpr_(vtab,ttab,csA_andexprurel(foo));
-	return inf;
-}
 /*
 struct a_urelexpr_ {
 	csL_list next;
@@ -322,25 +339,19 @@ static csC_info c_sumexprlist_(csS_table vtab,csS_table ttab,csA_sumexprlist foo
 	list_for_each_entry(pos, foo, next) {
 		csC_info tmp = c_termlist_(vtab,ttab,csA_sumexprterm(pos));
 		if (op) {
+			VERIFY(tmp.ty);
+			VERIFY(tmp.ty->kind == csT_int || tmp.ty->kind == csT_string);
 			if (tmp.kind == c_intconst_ && inf.kind == c_intconst_) {
-				switch (op) {
-				case csA_plus:
-					tmp.u.intconst = inf.u.intconst + tmp.u.intconst;
-					break;
-				case csA_minus:
-					tmp.u.intconst = inf.u.intconst - tmp.u.intconst;
-					break;
-				default:
-					VERIFY(0);
-				}
+				tmp = c_opdispatch_(op,inf,tmp);
 			} else if (tmp.kind == c_strconst_ && inf.kind == c_strconst_) {
 				VERIFY(0);
 			} else {
 				csC_address arg1 = c_infotoaddr(inf);
 				csC_address arg2 = c_infotoaddr(tmp);
 				csC_address res = c_addresstemp_(csT_newtemp());
-				c_quad_(arg1,arg2,res,csC_add);
+				c_addrdispatch_(op,arg1,arg2,res);
 				tmp.u.addr = res;
+				tmp.kind = c_addr_;
 			}
 		}
 		op = csA_sumexprop(pos);
@@ -367,18 +378,16 @@ static csC_info c_termlist_(csS_table vtab,csS_table ttab,csA_termlist foo)
 		csC_info tmp = c_uexpr_(vtab,ttab,csA_termuexpr(pos));
 		if (op) {
 			if (tmp.kind == c_intconst_ && inf.kind == c_intconst_) {
-				switch (op) {
-				case csA_times:
-					tmp.u.intconst = inf.u.intconst * tmp.u.intconst;
-					break;
-				case csA_divide:
-					tmp.u.intconst = inf.u.intconst / tmp.u.intconst;
-					break;
-				default:
-					VERIFY(0);
-				}
+				tmp = c_opdispatch_(op,inf,tmp);
 			} else if (tmp.kind == c_strconst_ && inf.kind == c_strconst_) {
 				VERIFY(0);
+			}  else {
+				csC_address arg1 = c_infotoaddr(inf);
+				csC_address arg2 = c_infotoaddr(tmp);
+				csC_address res = c_addresstemp_(csT_newtemp());
+				c_addrdispatch_(op,arg1,arg2,res);
+				tmp.u.addr = res;
+				tmp.kind = c_addr_;
 			}
 		}
 		op = csA_termop(pos);
@@ -434,22 +443,22 @@ static csC_info c_immutable_(csS_table vtab,csS_table ttab,csA_immutable foo)
 	csC_info inf = c_info_();
 	VERIFY(foo);
 	switch (foo->kind) {
-    case csA_num:
+    case csA_num_:
     	inf.kind = c_intconst_;
     	inf.u.intconst = csA_immutnum(foo);
     	inf.ty = csT_typeint();
     	break;
-    case csA_char:
+    case csA_char_:
     	VERIFY(0);
     	break;
-    case csA_str:
+    case csA_str_:
     	inf.kind = c_strconst_;
     	inf.u.strconst = csA_immutstr(foo);
     	inf.ty = csT_typestring();
     	break;
-    case csA_bool:
+    case csA_bool_:
     	inf.kind = c_boolconst_;
-    	inf.u.intconst = csA_immutbool(foo);
+    	inf.u.boolconst = csA_immutbool(foo);
     	inf.ty = csT_typebool();
     	break;
     default:
@@ -542,4 +551,44 @@ static csC_quadlist c_quadlist_()
 	INIT_LIST_HEAD(foo);
 	quadlist = foo;
 	return foo;
+}
+
+static csC_info c_opdispatch_(csA_op op,csC_info inf,csC_info tmp)
+{
+	switch (op) {
+	case csA_plus:
+		tmp.u.intconst = inf.u.intconst + tmp.u.intconst;
+		break;
+	case csA_minus:
+		tmp.u.intconst = inf.u.intconst - tmp.u.intconst;
+		break;
+	case csA_times:
+		tmp.u.intconst = inf.u.intconst * tmp.u.intconst;
+		break;
+	case csA_divide:
+		tmp.u.intconst = inf.u.intconst / tmp.u.intconst;
+		break;
+	default:
+		VERIFY(0);
+	}
+	return tmp;
+}
+static void c_addrdispatch_(csA_op op,csC_address arg1,csC_address arg2,csC_address res)
+{
+	switch (op) {
+	case csA_plus:
+		c_quad_(arg1,arg2,res,csC_add);
+		break;
+	case csA_minus:
+		c_quad_(arg1,arg2,res,csC_sub);
+		break;
+	case csA_times:
+		c_quad_(arg1,arg2,res,csC_multiply);
+		break;
+	case csA_divide:
+		c_quad_(arg1,arg2,res,csC_divide);
+		break;
+	default:
+		VERIFY(0);
+	}
 }

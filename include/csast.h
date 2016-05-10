@@ -25,12 +25,18 @@ typedef struct a_andexpr_ *csA_andexpr;
 typedef struct a_simpleexpr_ *csA_simpleexpr;
 typedef struct a_locvardec_ *csA_locdec;
 typedef csL_list *csA_locdeclist;
+typedef struct a_expr_ *csA_expr;
+typedef csL_list *csA_exprlist;
+typedef csL_list *csA_stmtlist;
+
+
 
 typedef enum {
-	csA_plus = 1 , csA_minus, csA_times, csA_divide,
+	csA_plus = 256 , csA_minus, csA_times, csA_divide,
 	/*		+			-				*				/		*/
-	csA_eq, csA_neq, csA_lt, csA_lq, csA_gt, csA_gq
+	csA_eq, csA_neq, csA_lt, csA_lq, csA_gt, csA_gq,
 	/*		==		   !=		   <          <=         >         >=	*/
+	//csA_and,csA_or
 } csA_op;
 
 struct a_dec_ {
@@ -85,6 +91,30 @@ extern void csA_setparamtype(csA_param foo,csS_symbol type);
 extern void csA_setparamname(csA_param foo,csS_symbol name);
 extern csA_paramlist csA_mkparamlist(void);
 extern void csA_paramlistadd(csA_paramlist foo,csA_param bar);
+
+// $ mutable = expr
+//expr → assignexpr | simpleexpr
+struct a_expr_ {
+	enum {csA_sim_,csA_asgn_} kind;
+	csG_pos pos;
+	csL_list next;
+	union {
+		csA_simplelist list;
+		struct  {
+			csA_mutable mut;
+			csA_expr expr;
+		} asgn;
+	} u;
+};
+extern csA_expr csA_mkexpr();
+extern csA_exprlist csA_mkexprlist();
+extern csA_simplelist csA_exprsimplelist(csA_expr expr);
+extern void csA_exprlistadd(csA_exprlist head,csA_expr bar);
+extern csA_mutable csA_exprmut(csA_expr expr);
+extern csA_expr csA_exprexpr(csA_expr expr);
+extern void csA_setexprlist(csA_expr expr,csA_simplelist list);
+extern void csA_setexprasgnexpr(csA_expr expr,csA_expr asgn);
+extern void csA_setexprasgnmut(csA_expr expr,csA_mutable mut);
 
 struct a_simpleexpr_ {
 	csL_list next;
@@ -208,14 +238,13 @@ extern csS_symbol csA_mutid(csA_mutable foo);
 struct a_immutable_ {
 	csG_pos pos;
 	enum {
-		csA_expr,csA_call,csA_num,csA_char,
-		csA_str,csA_bool
+		csA_expr_,csA_call_,csA_num_,csA_char_,
+		csA_str_,csA_bool_
 	} kind;
 	union {
 		int val; 	// NUM CHAR true false
 		csG_string str;	// STRING
-		//CSastExpr expr;
-		/* exprList is optional */
+		csA_exprlist expr;/* exprList is optional */
 		struct {csA_arglist args;csS_symbol id;} call;
 	} u;
 };

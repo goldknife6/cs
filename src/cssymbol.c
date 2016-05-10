@@ -67,7 +67,26 @@ void *csS_look(csS_table tab, csS_symbol sym)
 	VERIFY(tab);
 	VERIFY(sym);
 	VERIFY(tab->top);
-	return csH_tablook(tab->top, sym);
+	void *val = csH_tablook(tab->top, sym);
+	if (!val) {
+		s_table_ele *pos;
+		list_for_each_entry(pos, &tab->head, next) {
+			val = csH_tablook(pos->tab, sym);
+			if (val) {
+				return val;
+			}
+		}
+	}
+	return val; 
+}
+
+void *csS_looktop(csS_table tab, csS_symbol sym)
+{
+	VERIFY(tab);
+	VERIFY(sym);
+	VERIFY(tab->top);
+	void *val = csH_tablook(tab->top, sym);
+	return val; 
 }
 
 void csS_tabfree(csS_table tab)

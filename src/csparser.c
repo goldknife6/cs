@@ -25,6 +25,10 @@ static csA_simpleexpr 	p_simpleexpr_(void);
 static csA_simplelist 	p_simplelist_(void);
 static csA_locdec 		p_locvardec_(void);
 static csA_locdeclist 	p_locvardeclist_(void);
+static csA_expr 		p_expr_(void);
+static csA_exprlist 	p_exprlist_(void);
+static csA_stmt  		p_stmt_(void);
+static csA_stmtlist 	p_stmtlist_(void);
 
 
 #define MATCH(tok,msg,lab) ({if (!match(tok,msg)) goto lab;})
@@ -171,6 +175,63 @@ sync:
 	VERIFY(0);
 }
 
+static csA_exprlist p_exprlist_(void)
+{
+	csA_exprlist foo = NULL;
+	csA_expr bar = NULL;
+loop:
+	switch(token.kind) {
+	case csL_NOT:case csL_MINUS:case csL_LPAREN:
+	case csL_LBRACK:case csL_NUM:case csL_CHAR:
+	case csL_TRUE:case csL_FALSE:case csL_STRING:
+	case csL_ID:case csL_DOLLAR:
+		if (!foo) foo = csA_mkexprlist();
+		bar = p_expr_();
+		if (bar) csA_exprlistadd(foo,bar);
+		if (token.kind == csL_COMMA) {
+			MATCH(csL_COMMA,"missing ,",sync);
+			goto loop;
+		}
+		break;
+	default:
+		VERIFY(0);
+	}
+	return foo;
+sync:
+	VERIFY(0);
+}
+
+static csA_expr p_expr_(void)
+{
+	csA_expr foo = NULL;
+	csA_simplelist bar = NULL;
+	csA_mutable mut = NULL;
+	csA_expr e = NULL;
+	switch(token.kind) {
+	case csL_NOT:case csL_MINUS:case csL_LPAREN:
+	case csL_LBRACK:case csL_NUM:case csL_CHAR:
+	case csL_TRUE:case csL_FALSE:case csL_STRING:
+	case csL_ID:
+		if (!foo) foo = csA_mkexpr();
+		bar = p_simplelist_();
+		csA_setexprlist(foo,bar);
+		break;
+	case csL_DOLLAR:
+		if (!foo) foo = csA_mkexpr();
+		MATCH(csL_DOLLAR,"missing $",sync);
+		mut = p_mutable_();
+		csA_setexprasgnmut(foo,mut);
+		MATCH(csL_ASSIGN,"missing =",sync);
+		e = p_expr_();
+		csA_setexprasgnexpr(foo,e);
+		break;
+	default:
+		VERIFY(0);
+	}
+sync:
+	VERIFY(0);
+}
+
 static csA_mutable p_mutable_(void)
 {
 	csA_mutable foo = NULL;
@@ -202,11 +263,11 @@ static csA_immutable p_immutable_(void)
 		MATCH(csL_STRING,"missing strconst",sync);
 		break;
 	case csL_TRUE:
-		csA_setimmutbool(foo,csL_tokenbool(token));
+		csA_setimmutbool(foo,TRUE);
 		MATCH(csL_TRUE,"missing boolconst",sync);
 		break;
 	case csL_FALSE:
-		csA_setimmutbool(foo,csL_tokenbool(token));
+		csA_setimmutbool(foo,FALSE);
 		MATCH(csL_FALSE,"missing boolconst",sync);
 		break;
 	case csL_LBRACK://function call
@@ -368,6 +429,7 @@ static csA_sumexpr p_sumexpr_(void)
 sync:
 	VERIFY(0);
 }
+
 static csA_sumexprlist p_sumexprlist_(void)
 {
 	csA_sumexprlist foo = NULL;
@@ -521,4 +583,20 @@ loop:
 		return foo;
 	}
 	return foo;
+}
+static csA_stmtlist p_stmtlist_(void)
+{
+
+}
+static csA_stmt p_stmt_(void)
+{
+	switch(token.kind) {
+	case csL_DOLLAR:case csL_NOT:case csL_MINUS:
+	case csL_LPAREN:case csL_LBRACK:case csL_NUM:
+	case csL_CHAR:case csL_TRUE:case csL_FALSE:
+	case csL_STRING:case csL_ID:
+		break;
+	default:
+		VERIFY(0);
+	}
 }
