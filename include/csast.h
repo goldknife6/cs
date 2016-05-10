@@ -28,7 +28,7 @@ typedef csL_list *csA_locdeclist;
 typedef struct a_expr_ *csA_expr;
 typedef csL_list *csA_exprlist;
 typedef csL_list *csA_stmtlist;
-
+typedef struct a_stmt_ *csA_stmt;
 
 
 typedef enum {
@@ -56,7 +56,7 @@ struct a_dec_ {
 			csA_paramlist list;/*may empty*/
 			csS_symbol restype;
 			csA_locdeclist loclist;/*may empty*/
-			//CSastStmtList stmtList;/*may empty*/
+			csA_stmtlist stmtlist;/*may empty*/
 		} fundec;
 	} u;
 };
@@ -78,6 +78,10 @@ extern void csA_setdecfunrestype(csA_dec foo,csS_symbol restype);
 extern void csA_setdecfunname(csA_dec foo,csS_symbol name);
 extern void csA_setdecfunparamlist(csA_dec foo,csA_paramlist list);
 extern void csA_setdecfunloclist(csA_dec foo,csA_locdeclist list);
+extern void csA_setdecfunstmtlist(csA_stmtlist list,csA_dec foo);
+extern csA_stmtlist csA_decfunstmtlist(csA_dec foo);
+
+
 struct a_paramt_ {
 	csS_symbol type;
 	csS_symbol name;
@@ -280,12 +284,35 @@ extern void csA_setlocdecname(csA_locdec foo,csS_symbol name);
 extern void csA_setlocdecsimlist(csA_locdec foo,csA_simplelist list);
 extern csA_locdec csA_mklocdec();
 
-typedef struct a_stmt_ *csA_stmt;
+
 struct a_stmt_ {
 	enum {
 		csA_exprstmt ,csA_compoundstmt,csA_ifstmt,
 		csA_whilestmt,csA_forstmt,csA_returnstmt,csA_breakstmt
 	} kind;
 	csG_pos pos;
+	csL_list next;
+	union {
+		/*may null*/
+		csA_exprlist exprList;
+
+		/*compoundstmt varList and stmtList may null*/
+		struct { csA_locdeclist varlist;csA_stmtlist stmtlist ;} comStmt;
+
+		/*ifStmt → if (exprList) statement [else statement]*/
+		struct { csA_exprlist list;csA_stmt ifs,elses;} ifstmt;
+		
+		/*whileStmt → while (exprList) statement*/
+		struct { csA_exprlist list;csA_stmt stmt;} whestmt;
+		
+		/*forStmt → for (exprList;exprList;exprList) statement*/
+		struct { csA_exprlist list1,list2,list3;csA_stmt stmt;} forstmt;
+
+		/*returnStmt → return [exprList]; list may null*/
+		struct { csA_exprlist list;} retstmt;
+	} u;
 };
+extern csA_stmt csA_mkstmt();
+extern csA_stmtlist csA_mkstmtlist();
+extern void csA_stmtlistadd(csA_stmtlist list,csA_stmt stmt);
 #endif/*!CS_AST_H*/

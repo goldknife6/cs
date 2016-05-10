@@ -97,6 +97,19 @@ csA_locdeclist csA_decfunloclist(csA_dec foo)
 	VERIFY(foo->kind == csA_fundec);
 	return foo->u.fundec.loclist;
 }
+void csA_setdecfunstmtlist(csA_stmtlist list,csA_dec foo)
+{
+	VERIFY(list);VERIFY(foo);
+	foo->kind = csA_fundec;
+	foo->u.fundec.stmtlist = list;
+}	
+csA_stmtlist csA_decfunstmtlist(csA_dec foo)
+{
+	VERIFY(foo);
+	VERIFY(foo->kind == csA_fundec);
+	return foo->u.fundec.stmtlist;
+}
+
 /**************************************************************/
 
 csA_declist csA_mkdeclist(void)
@@ -676,4 +689,24 @@ void csA_setexprasgnmut(csA_expr expr,csA_mutable mut)
 	VERIFY(expr);VERIFY(mut);
 	expr->kind = csA_asgn_;
 	expr->u.asgn.mut = mut;
+}
+/**************************************************************/
+csA_stmt csA_mkstmt()
+{
+	csA_stmt foo = csU_malloc(sizeof(*foo));
+	INIT_LIST_HEAD(&foo->next);
+	return foo;
+}
+
+void csA_stmtlistadd(csA_stmtlist head,csA_stmt bar)
+{
+	VERIFY(head);VERIFY(bar);
+	list_add_tail(&bar->next, head);
+}
+
+csA_stmtlist csA_mkstmtlist()
+{
+	csA_stmtlist foo = csU_malloc(sizeof(*foo));
+	INIT_LIST_HEAD(foo);
+	return foo;
 }

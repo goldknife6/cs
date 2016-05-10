@@ -22,6 +22,10 @@ static void p_factor_(csA_factor foo);
 static void p_op_(csA_op foo);
 static void p_locdeclist_(csA_locdeclist foo);
 static void p_locdec_(csA_locdec foo);
+static void p_stmtlist_(csA_stmtlist foo);
+static void p_stmt_(csA_stmt foo);
+static void p_exprlist_(csA_exprlist foo);
+static void p_expr_(csA_expr foo);
 
 void testparser(void)
 {
@@ -75,6 +79,7 @@ static void p_dec_(csA_dec dec)
 		fprintf(debugs, " %s\n", csS_name(s));
 		fprintf(debugs, "{\n");
 		p_locdeclist_(csA_decfunloclist(dec));
+		p_stmtlist_(csA_decfunstmtlist(dec));
 		fprintf(debugs, "}\n");
 		break;
 	default:
@@ -290,5 +295,70 @@ static void p_op_(csA_op foo)
 		fprintf(debugs,">=");break;
 	default:
 		VERIFY(0);
+	}
+}
+
+static void p_stmtlist_(csA_stmtlist list)
+{
+	if (!list) return;
+	csA_stmt pos = NULL;
+	list_for_each_entry(pos, list, next) {
+		p_stmt_(pos);
+	}
+}
+/*
+csA_exprstmt ,csA_compoundstmt,csA_ifstmt,
+		csA_whilestmt,csA_forstmt,csA_returnstmt,csA_breakstmt
+*/
+static void p_stmt_(csA_stmt foo)
+{
+	if (!foo) return;
+	switch (foo->kind) {
+	case csA_exprstmt:
+		p_exprlist_(foo->u.exprList);
+		fprintf(debugs, ";");
+		break;
+	case csA_compoundstmt:
+		break;
+	case csA_ifstmt:
+		break;
+	case csA_whilestmt:
+		break;
+	case csA_forstmt:
+		break;
+	case csA_returnstmt:
+		break;
+	case csA_breakstmt:
+		break;		
+	default:
+		VERIFY(0);
+	}
+	fprintf(debugs, "\n");
+}
+static void p_expr_(csA_expr foo)
+{
+	if (!foo) return;
+	switch (foo->kind) {
+	case csA_sim_:
+		p_simplelist_(csA_exprsimplelist(foo));
+		break;
+	case csA_asgn_:
+		fprintf(debugs, "$");
+		p_mutable_(csA_exprmut(foo));
+		p_expr_(csA_exprexpr(foo));
+		break;
+	default:
+		VERIFY(0);
+	}
+}
+static void p_exprlist_(csA_exprlist list)
+{
+	if (!list) return;
+	csA_expr pos = NULL;
+	char *s = "";
+	list_for_each_entry(pos, list, next) {
+		fprintf(debugs, "%s",s);
+		p_expr_(pos);
+		s = ",";
 	}
 }

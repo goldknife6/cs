@@ -119,6 +119,8 @@ static csA_dec p_dec_(void)
 		MATCH(csL_LBRACE,"missing {",sync);
 		csA_locdeclist list = p_locvardeclist_();
 		if (list) csA_setdecfunloclist(foo,list);
+		csA_stmtlist stmt = p_stmtlist_();
+		if (stmt) csA_setdecfunstmtlist(stmt,foo);
 		MATCH(csL_RBRACE,"missing }",sync);
 	}
 	return foo;
@@ -228,6 +230,7 @@ static csA_expr p_expr_(void)
 	default:
 		VERIFY(0);
 	}
+	return foo;
 sync:
 	VERIFY(0);
 }
@@ -586,17 +589,55 @@ loop:
 }
 static csA_stmtlist p_stmtlist_(void)
 {
-
+	csA_stmtlist head = csA_mkstmtlist();
+	while (TRUE) {
+		csA_stmt bar = p_stmt_();
+		if (!bar) break;
+		csA_stmtlistadd(head,bar);
+	}
+	return head;
 }
 static csA_stmt p_stmt_(void)
 {
+	csA_stmt foo = NULL;
 	switch(token.kind) {
 	case csL_DOLLAR:case csL_NOT:case csL_MINUS:
 	case csL_LPAREN:case csL_LBRACK:case csL_NUM:
 	case csL_CHAR:case csL_TRUE:case csL_FALSE:
-	case csL_STRING:case csL_ID:
+	case csL_STRING:case csL_ID: {
+		foo = csA_mkstmt();
+		csA_exprlist list = p_exprlist_();
+		foo->kind = csA_exprstmt;
+		foo->u.exprList = list;
+		MATCH(csL_SEMICOLON,"missing ;",sync);
+		break;
+	}
+	case csL_SEMICOLON:/*empty stmt*/
+		VERIFY(0);
+		MATCH(csL_SEMICOLON,"missing ;",sync);
+		break;
+	case csL_IF:/*ifStmt → if ( exprList ) stmt [ else stmt ]*/
+		VERIFY(0);
+		break;
+	case csL_FOR:
+		VERIFY(0);
+		break;
+	case csL_WHILE:
+		VERIFY(0);
+		break;
+	case csL_LBRACE:
+		VERIFY(0);
+		break;
+	case csL_RETURN:
+		VERIFY(0);
+		break;
+	case csL_BREAK:
+		VERIFY(0);
 		break;
 	default:
-		VERIFY(0);
+		return NULL;
 	}
+	return foo;
+sync:
+	VERIFY(0);
 }
