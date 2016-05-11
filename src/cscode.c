@@ -40,7 +40,7 @@ static csC_info c_mutable_(csS_table vtab,csS_table ttab,csA_mutable foo);
 static csC_info c_stmtlist_(csS_table vtab,csS_table ttab,csA_stmtlist foo);
 static csC_info c_exprlist_(csS_table vtab,csS_table ttab,csA_exprlist foo);
 static csC_info c_expr_(csS_table vtab,csS_table ttab,csA_expr foo);
-
+static csC_info c_stmt_(csS_table vtab,csS_table ttab,csA_stmt foo);
 
 
 
@@ -278,6 +278,7 @@ static csC_info c_expr_(csS_table vtab,csS_table ttab,csA_expr foo)
 	}
 	return inf;
 }
+
 static csC_info c_exprlist_(csS_table vtab,csS_table ttab,csA_exprlist foo)
 {
 	csC_info inf = c_info_();
@@ -289,22 +290,117 @@ static csC_info c_exprlist_(csS_table vtab,csS_table ttab,csA_exprlist foo)
 	return inf;
 }
 
-static csC_info c_stmtlist_(csS_table vtab,csS_table ttab,csA_stmtlist foo)
+static csC_info c_stmt_(csS_table vtab,csS_table ttab,csA_stmt pos)
 {
 	csC_info inf = c_info_();
-	csA_stmt pos;
-	if (!foo) VERIFY(0);
-	list_for_each_entry(pos, foo, next) {
-		switch (pos->kind) {
+	VERIFY(pos);
+	switch (pos->kind) {
 		case csA_exprstmt:
 			if (pos->u.exprList)
 				inf = c_exprlist_(vtab,ttab,pos->u.exprList);
 			break;
-		case csA_ifstmt:
+		case csA_ifstmt:{//struct { csA_exprlist list;csA_stmt ifs,elses;} ifstmt;
+			VERIFY(pos->u.ifstmt.list);
+			inf = c_exprlist_(vtab,ttab,pos->u.ifstmt.list);
+			csT_label L1 = csT_newlabel();
+			csC_address res = c_addresslable_(L1);
+			csC_address arg1 = c_infotoaddr(inf);
+			c_quad_(arg1,c_address_(),res,csC_iffalse);
+			VERIFY(pos->u.ifstmt.ifs);
+			inf = c_stmt_(vtab,ttab,pos->u.ifstmt.ifs);
+			csA_stmt elses = pos->u.ifstmt.elses;
+			csT_label L2 = NULL;
+			if (elses) {
+				L2 = csT_newlabel();
+				c_quad_(c_address_(),c_address_(),c_addresslable_(L2),csC_goto);
+			}
+			c_quad_(c_address_(),c_address_(),res,csC_lable);
+			if (elses) {
+				inf = c_stmt_(vtab,ttab,elses);
+				c_quad_(c_address_(),c_address_(),c_addresslable_(L2),csC_lable);
+			}
 			break;
+		}//struct { csA_locdeclist varlist;csA_stmtlist stmtlist ;} comstmt;
+		case csA_compoundstmt:{
+			csA_locdeclist list = pos->u.comstmt.varlist;
+			if (list)
+				c_locdeclist(vtab,ttab,list);
+			csA_stmtlist stmt = pos->u.comstmt.stmtlist;
+			if (stmt)
+				c_stmtlist_(vtab,ttab,stmt);
+			break;
+		}
+		case csA_whilestmt:{
+			csA_exprlist list = pos->u.whestmt.list;
+			csA_stmt stmt = pos->u.whestmt.stmt;
+			VERIFY(list);VERIFY(stmt);
+			csT_label L1 = csT_newlabel();
+			csT_label L2 = csT_newlabel();
+			csC_address res = c_addresslable_(L1);
+			csC_address arg1 = c_address_();
+			c_quad_(arg1,arg1,res,csC_lable);
+			inf = c_exprlist_(vtab,ttab,list);
+			arg1 = c_infotoaddr(inf);
+			c_quad_(arg1,c_address_(),c_addresslable_(L2),csC_iffalse);
+			inf = c_stmt_(vtab,ttab,stmt);
+			c_quad_(c_address_(),c_address_(),c_addresslable_(L1),csC_goto);
+			c_quad_(c_address_(),c_address_(),c_addresslable_(L2),csC_lable);
+			break;
+		}
+		case csA_forstmt: {
+			csA_exprlist list1 = pos->u.forstmt.list1;
+			csA_exprlist list2 = pos->u.forstmt.list2;
+			csA_exprlist list3 = pos->u.forstmt.list3;
+			csA_stmt stmt = pos->u.forstmt.stmt;
+			if (list1)
+				inf = c_exprlist_(vtab,ttab,list1);
+			csT_label loopbody = csT_newlabel();
+			csT_label out = csT_newlabel();
+			
+			csC_address arg1 = c_address_();
+			if (list2) {
+				inf = c_exprlist_(vtab,ttab,list2);
+				arg1 = c_infotoaddr(inf);
+				c_quad_(arg1,c_address_(),c_addresslable_(out),csC_iffalse);
+			}
+			c_quad_(c_address_(),c_address_(),c_addresslable_(loopbody),csC_lable);
+			VERIFY(stmt);
+			inf = c_stmt_(vtab,ttab,stmt);
+			if (list3)
+				inf = c_exprlist_(vtab,ttab,list3);
+			if (list2) {
+				c_quad_(arg1,c_address_(),c_addresslable_(loopbody),csC_if);
+				c_quad_(c_address_(),c_address_(),c_addresslable_(out),csC_lable);
+			} else {
+				c_quad_(arg1,c_address_(),c_addresslable_(loopbody),csC_goto);
+			}
+			break;
+		}
+		case csA_returnstmt: {
+			csA_exprlist list = pos->u.retstmt.list;
+			csC_address arg1 = c_address_();
+			if (list) {
+				inf = c_exprlist_(vtab,ttab,list);
+				arg1 = c_infotoaddr(inf);
+			}
+			c_quad_(c_address_(),c_address_(),arg1,csC_return);
+			break;
+		}
+		case csA_breakstmt: {
+			//c_quad_(arg1,c_address_(),c_addresslable_(loopbody),csC_goto);
+		}
 		default:
 			VERIFY(0);
-		}
+	}
+	return inf;
+}
+static csC_info c_stmtlist_(csS_table vtab,csS_table ttab,csA_stmtlist foo)
+{
+	csC_info inf = c_info_();
+	csA_stmt pos;
+	
+	list_for_each_entry(pos, foo, next) {
+		inf = c_stmt_(vtab,ttab,pos);
 	}
 	return inf;
 }

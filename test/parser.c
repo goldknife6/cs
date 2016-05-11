@@ -334,12 +334,29 @@ static void p_stmt_(csA_stmt foo)
 		p_stmt_(foo->u.ifstmt.elses);
 		break;
 	case csA_whilestmt:
+		fprintf(debugs, "while(");
+		p_exprlist_(foo->u.whestmt.list);
+		fprintf(debugs, ") ");
+		VERIFY(foo->u.whestmt.stmt);
+		p_stmt_(foo->u.whestmt.stmt);
 		break;
 	case csA_forstmt:
+		fprintf(debugs, "for(");
+		p_exprlist_(foo->u.forstmt.list1);
+		fprintf(debugs, ";");
+		p_exprlist_(foo->u.forstmt.list2);
+		fprintf(debugs, ";");
+		p_exprlist_(foo->u.forstmt.list3);
+		fprintf(debugs, ") ");
+		p_stmt_(foo->u.forstmt.stmt);
 		break;
 	case csA_returnstmt:
+		fprintf(debugs, "return ");
+		p_exprlist_(foo->u.retstmt.list);
+		fprintf(debugs, ";\n");
 		break;
 	case csA_breakstmt:
+		fprintf(debugs, "break;");
 		break;		
 	default:
 		VERIFY(0);

@@ -195,8 +195,9 @@ loop:
 			goto loop;
 		}
 		break;
+	case csL_SEMICOLON://FOLLOW
 	case csL_RPAREN:
-		return foo;
+		break;
 	default:
 		VERIFY(0);
 	}
@@ -628,6 +629,7 @@ static csA_stmt p_stmt_(void)
 		MATCH(csL_IF,"missing if",sync);
 		MATCH(csL_LPAREN,"missing (",sync);
 		csA_exprlist list = p_exprlist_();
+		VERIFY(list);
 		foo->u.ifstmt.list = list;
 		MATCH(csL_RPAREN,"missing )",sync);
 		foo->u.ifstmt.ifs = p_stmt_();
@@ -637,12 +639,40 @@ static csA_stmt p_stmt_(void)
 		}
 		break;
 	}
-	case csL_FOR:
-		VERIFY(0);
+	case csL_FOR:{//struct { csA_exprlist list1,list2,list3;csA_stmt stmt;} forstmt;
+		csA_exprlist list = NULL;
+		foo = csA_mkstmt();
+		foo->kind = csA_forstmt;
+		MATCH(csL_FOR,"missing for",sync);
+		MATCH(csL_LPAREN,"missing (",sync);
+		list = p_exprlist_();
+		foo->u.forstmt.list1 = list;
+		MATCH(csL_SEMICOLON,"missing ;",sync);
+		list = p_exprlist_();
+		foo->u.forstmt.list2 = list;
+		MATCH(csL_SEMICOLON,"missing ;",sync);
+		list = p_exprlist_();
+		foo->u.forstmt.list3 = list;
+		MATCH(csL_RPAREN,"missing )",sync);
+		csA_stmt stmt = p_stmt_();
+		VERIFY(stmt);
+		foo->u.forstmt.stmt = stmt;
 		break;
-	case csL_WHILE:
-		VERIFY(0);
+	}
+	case csL_WHILE: {
+		MATCH(csL_WHILE,"missing while",sync);
+		foo = csA_mkstmt();
+		MATCH(csL_LPAREN,"missing (",sync);
+		foo->kind = csA_whilestmt;
+		csA_exprlist list = p_exprlist_();
+		VERIFY(list);
+		foo->u.whestmt.list = list;
+		MATCH(csL_RPAREN,"missing )",sync);
+		csA_stmt stmt = p_stmt_();
+		VERIFY(stmt);
+		foo->u.whestmt.stmt = stmt;
 		break;
+	}
 	case csL_LBRACE:{
 		MATCH(csL_LBRACE,"missing {",sync);
 		foo = csA_mkstmt();
@@ -655,14 +685,20 @@ static csA_stmt p_stmt_(void)
 		break;
 	}
 	case csL_RETURN:
-		VERIFY(0);
+		MATCH(csL_RETURN,"missing return",sync);
+		foo = csA_mkstmt();
+		foo->kind = csA_returnstmt;
+		foo->u.retstmt.list = p_exprlist_();
+		MATCH(csL_SEMICOLON,"missing ;",sync);
 		break;
 	case csL_BREAK:
-		VERIFY(0);
+		MATCH(csL_BREAK,"missing break",sync);
+		MATCH(csL_SEMICOLON,"missing ;",sync);
 		break;
 	default:
 		return NULL;
 	}
+
 	return foo;
 sync:
 	VERIFY(0);

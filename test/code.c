@@ -96,6 +96,12 @@ static void c_printquad(csC_quad quad)
  		c_printaddr(quad->res);
  		fprintf(debugs, " ");
  		c_printaddr(quad->arg1);
+ 		fprintf(debugs, ",");
+ 		c_printaddr(quad->arg2);
+ 		break;
+ 	case csC_return:
+ 		fprintf(debugs, "return ");
+ 		c_printaddr(quad->res);
  		break;
  	case csC_param:
  		fprintf(debugs, "param ");

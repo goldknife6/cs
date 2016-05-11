@@ -35,7 +35,8 @@ typedef enum {
 	csC_lable,csC_assign,csC_goto,
 	csC_iffalse,csC_if,csC_add,csC_call,
 	csC_param,csC_minus,csC_multiply,
-	csC_divide,csC_sub,csC_or,csC_and
+	csC_divide,csC_sub,csC_or,csC_and,
+	csC_return
 } c_opkind_;
 
 struct c_quad_ {
