@@ -92,9 +92,8 @@ static void c_printquad(csC_quad quad)
  		c_printaddr(quad->arg2);
  		break;
  	case csC_call:
- 		fprintf(debugs, "call ");
  		c_printaddr(quad->res);
- 		fprintf(debugs, " ");
+ 		fprintf(debugs, " = call ");
  		c_printaddr(quad->arg1);
  		fprintf(debugs, ",");
  		c_printaddr(quad->arg2);
@@ -146,6 +145,53 @@ static void c_printquad(csC_quad quad)
  		c_printaddr(quad->arg1);
  		fprintf(debugs, " & ");
  		c_printaddr(quad->arg2);
+ 		break;
+ 	case csC_eq:
+ 		c_printaddr(quad->res);
+ 		fprintf(debugs, " = ");
+ 		c_printaddr(quad->arg1);
+ 		fprintf(debugs, " == ");
+ 		c_printaddr(quad->arg2);
+ 		break;
+ 	case csC_neq:
+ 		c_printaddr(quad->res);
+ 		fprintf(debugs, " = ");
+ 		c_printaddr(quad->arg1);
+ 		fprintf(debugs, " != ");
+ 		c_printaddr(quad->arg2);
+ 		break;
+ 	case csC_lt:
+ 		c_printaddr(quad->res);
+ 		fprintf(debugs, " = ");
+ 		c_printaddr(quad->arg1);
+ 		fprintf(debugs, " < ");
+ 		c_printaddr(quad->arg2);
+ 		break;
+ 	case csC_lq:
+ 		c_printaddr(quad->res);
+ 		fprintf(debugs, " = ");
+ 		c_printaddr(quad->arg1);
+ 		fprintf(debugs, " <= ");
+ 		c_printaddr(quad->arg2);
+ 		break;
+ 	case csC_gt:
+ 		c_printaddr(quad->res);
+ 		fprintf(debugs, " = ");
+ 		c_printaddr(quad->arg1);
+ 		fprintf(debugs, " > ");
+ 		c_printaddr(quad->arg2);
+ 		break;
+ 	case csC_gq:
+ 		c_printaddr(quad->res);
+ 		fprintf(debugs, " = ");
+ 		c_printaddr(quad->arg1);
+ 		fprintf(debugs, " >= ");
+ 		c_printaddr(quad->arg2);
+ 		break;
+ 	case csC_not:
+ 		c_printaddr(quad->res);
+ 		fprintf(debugs, " = !");
+ 		c_printaddr(quad->arg1);
  		break;
  	default:
 		VERIFY(0);

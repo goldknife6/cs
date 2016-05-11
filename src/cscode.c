@@ -41,7 +41,7 @@ static csC_info c_stmtlist_(csS_table vtab,csS_table ttab,csA_stmtlist foo,csT_l
 static csC_info c_exprlist_(csS_table vtab,csS_table ttab,csA_exprlist foo);
 static csC_info c_expr_(csS_table vtab,csS_table ttab,csA_expr foo);
 static csC_info c_stmt_(csS_table vtab,csS_table ttab,csA_stmt foo,csT_label lable);
-
+static csC_info c_arglist_(csS_table vtab,csS_table ttab,csA_arglist foo);
 
 
 static csC_info c_infoconst_(csT_type ty)
@@ -138,6 +138,8 @@ static csC_address c_infotoaddr(csC_info inf)
 		case c_boolconst_:
 			addr = c_addressbool_(inf.u.boolconst);
 			break;
+		case c_empty_:
+			return c_address_();
 		default:
 			VERIFY(0);
 	}
@@ -459,38 +461,75 @@ static csC_info c_andlist_(csS_table vtab,csS_table ttab,csA_andlist foo)
 	return inf;
 }
 
-/*
-struct a_urelexpr_ {
-	csL_list next;
-	csG_bool flags; 
-	csA_relexpr rel;
-	csG_pos pos;
-};
-*/
 static csC_info c_urelexpr_(csS_table vtab,csS_table ttab,csA_urelexpr foo)
 {
 	csC_info inf;
-	VERIFY(foo);
-	if (foo->flags)
-		VERIFY(0);
-	inf = c_relexpr_(vtab,ttab,csA_urelexprrel(foo));
+	VERIFY(foo);//csC_not
+	csA_relexpr rel = csA_urelexprrel(foo);
+	VERIFY(rel);
+	inf = c_relexpr_(vtab,ttab,rel);
+	if (foo->flags) {
+		if (inf.kind == c_boolconst_) {
+			inf.u.boolconst = !inf.u.boolconst;
+			return inf;
+		}
+		csC_address arg1,arg2,res;
+		res = c_addresstemp_(csT_newtemp());
+		arg1 = c_infotoaddr(inf);
+		c_quad_(arg1,c_address_(),res,csC_not);
+		inf.kind = c_addr_;
+		inf.u.addr = res;
+	}
 	return inf;
 }
-/*
-struct a_relexpr_ {
-	csA_sumexprlist sum1;
-	csA_op op;
-	csA_sumexprlist sum2;
-	csG_pos pos;
-};
-*/
+
 static csC_info c_relexpr_(csS_table vtab,csS_table ttab,csA_relexpr foo)
 {
-	csC_info inf;
+	csC_info inf1;
 	VERIFY(foo);
-	inf = c_sumexprlist_(vtab,ttab,csA_relexprsum1(foo));
-	VERIFY(!csA_relexprop(foo));
-	return inf;
+	csA_sumexprlist list1 = csA_relexprsum1(foo);
+	VERIFY(list1);
+	inf1 = c_sumexprlist_(vtab,ttab,list1);
+	csA_op op = csA_relexprop(foo);
+	if (op) {
+		csA_sumexprlist list2 = csA_relexprsum2(foo);
+		csC_info inf2 = c_sumexprlist_(vtab,ttab,list2);
+		if (inf1.kind == c_intconst_ && inf2.kind == c_intconst_) {
+			return c_opdispatch_(op,inf1,inf2);
+		} else if (inf1.kind == c_strconst_ && inf2.kind == c_strconst_) {
+			VERIFY(0);
+		} 
+		VERIFY (list2);
+		csC_address arg1,arg2,res;
+		res = c_addresstemp_(csT_newtemp());
+		arg1 = c_infotoaddr(inf1);
+		arg2 = c_infotoaddr(inf2);
+		switch (op) {
+		case csA_eq:
+			c_quad_(arg1,arg2,res,csC_eq);
+			break;
+		case csA_neq:
+			c_quad_(arg1,arg2,res,csC_neq);
+			break;
+		case csA_lt:
+			c_quad_(arg1,arg2,res,csC_lt);
+			break;
+		case csA_lq:
+			c_quad_(arg1,arg2,res,csC_lq);
+			break;
+		case csA_gt:
+			c_quad_(arg1,arg2,res,csC_gt);
+			break;
+		case csA_gq:
+			c_quad_(arg1,arg2,res,csC_gq);
+			break;
+		default:
+			VERIFY(0);
+		}
+		inf1.kind = c_addr_;
+		inf1.u.addr = res;
+	}
+	return inf1;
 }
 
 static csC_info c_sumexprlist_(csS_table vtab,csS_table ttab,csA_sumexprlist foo)
@@ -522,14 +561,6 @@ static csC_info c_sumexprlist_(csS_table vtab,csS_table ttab,csA_sumexprlist foo
 	}
 	return inf;
 }
-/*
-struct a_sumexpr_ {
-	csL_list next;
-	csA_op op;
-	csA_termlist list;
-	csG_pos pos;
-};
-*/
 
 static csC_info c_termlist_(csS_table vtab,csS_table ttab,csA_termlist foo)
 {
@@ -584,23 +615,7 @@ static csC_info c_factor_(csS_table vtab,csS_table ttab,csA_factor foo)
 	}
 	return inf;
 }
-/*
-struct a_immutable_ {
-	csG_pos pos;
-	enum {
-		csA_expr,csA_call,csA_num,csA_char,
-		csA_str,csA_bool
-	} kind;
-	union {
-		int val; 	// NUM CHAR true false
-		csG_string str;	// STRING
-		//CSastExpr expr;
-		/* exprList is optional
-		struct {csA_arglist args;csS_symbol id;} call;
-	} u;
-};
-*/
-//NUMCONST | CHARCONST | STRINGCONST | true | false
+
 static csC_info c_immutable_(csS_table vtab,csS_table ttab,csA_immutable foo)
 {
 	csC_info inf = c_info_();
@@ -624,9 +639,44 @@ static csC_info c_immutable_(csS_table vtab,csS_table ttab,csA_immutable foo)
     	inf.u.boolconst = csA_immutbool(foo);
     	inf.ty = csT_typebool();
     	break;
+    case csA_call_:{
+    	csA_arglist arglist = csA_immutcallargs(foo);
+    	inf = c_arglist_(vtab,ttab,arglist);
+    	csC_address res = c_addresstemp_(csT_newtemp());
+    	csC_address arg1,arg2;
+    	csS_symbol funname = csA_immutcallid(foo);
+    	VERIFY(funname);
+    	csE_enventry e = csS_look(vtab,funname);
+    	VERIFY(e);
+    	arg1 = c_addressenv_(e);
+    	arg2 = c_infotoaddr(inf);
+    	c_quad_(arg1,arg2,res,csC_call);
+    	inf.kind = c_addr_;
+    	inf.u.addr = res;
+    	break;
+    }
     default:
     	VERIFY(0);
 	}
+	return inf;
+}
+
+static csC_info c_arglist_(csS_table vtab,csS_table ttab,csA_arglist foo)
+{
+	csC_info inf = c_info_();
+	csA_expr pos;
+	inf.kind = c_intconst_;
+	inf.u.intconst = 0;
+	if (!foo) return inf;
+	int i = 0;
+	list_for_each_entry(pos, foo, next) {
+		inf = c_expr_(vtab,ttab,pos);
+		csC_address res = c_infotoaddr(inf);
+		c_quad_(c_address_(),c_address_(),res,csC_param);
+		i++;
+	}
+	inf.kind = c_intconst_;
+	inf.u.intconst = i;
 	return inf;
 }
 
@@ -738,6 +788,30 @@ static csC_info c_opdispatch_(csA_op op,csC_info inf,csC_info tmp)
 		break;
 	case csA_divide:
 		tmp.u.intconst = inf.u.intconst / tmp.u.intconst;
+		break;
+	case csA_eq:
+		tmp.kind = c_boolconst_;
+		tmp.u.boolconst = inf.u.intconst == tmp.u.intconst;
+		break;
+	case csA_neq:
+		tmp.kind = c_boolconst_;
+		tmp.u.boolconst = inf.u.intconst != tmp.u.intconst;
+		break;
+	case csA_lt:
+		tmp.kind = c_boolconst_;
+		tmp.u.boolconst = inf.u.intconst < tmp.u.intconst;
+		break;
+	case csA_lq:
+		tmp.kind = c_boolconst_;
+		tmp.u.boolconst = inf.u.intconst <= tmp.u.intconst;
+		break;
+	case csA_gt:
+		tmp.kind = c_boolconst_;
+		tmp.u.boolconst = inf.u.intconst > tmp.u.intconst;
+		break;
+	case csA_gq:
+		tmp.kind = c_boolconst_;
+		tmp.u.boolconst = inf.u.intconst >= tmp.u.intconst;
 		break;
 	default:
 		VERIFY(0);

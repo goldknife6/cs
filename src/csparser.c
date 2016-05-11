@@ -29,7 +29,7 @@ static csA_expr 		p_expr_(void);
 static csA_exprlist 	p_exprlist_(void);
 static csA_stmt  		p_stmt_(void);
 static csA_stmtlist 	p_stmtlist_(void);
-
+static csA_arglist 		p_arglist_(void);
 
 #define MATCH(tok,msg,lab) ({if (!match(tok,msg)) goto lab;})
 
@@ -197,6 +197,7 @@ loop:
 		break;
 	case csL_SEMICOLON://FOLLOW
 	case csL_RPAREN:
+	case csL_RBRACK:
 		break;
 	default:
 		VERIFY(0);
@@ -279,7 +280,14 @@ static csA_immutable p_immutable_(void)
 		MATCH(csL_FALSE,"missing boolconst",sync);
 		break;
 	case csL_LBRACK://function call
-		VERIFY(0);
+		MATCH(csL_LBRACK,"missing [",sync);
+		csA_setimmutcallargs(foo,p_arglist_());
+		MATCH(csL_RBRACK,"missing ]",sync);
+		if (token.kind == csL_ID) {
+			csG_string name = csL_tokenstr(token);
+			csA_setimmutcallid(foo,csS_mksymbol(name));
+		}
+		MATCH(csL_ID,"missing function-id",sync);
 		break;
 	default:
 		VERIFY(0);
@@ -287,6 +295,11 @@ static csA_immutable p_immutable_(void)
 	return foo;
 sync:
 	VERIFY(0);
+}
+
+static csA_arglist p_arglist_(void)
+{
+	return p_exprlist_();
 }
 
 static csA_factor p_factor_(void)
@@ -592,16 +605,19 @@ loop:
 	}
 	return foo;
 }
+
 static csA_stmtlist p_stmtlist_(void)
 {
-	csA_stmtlist head = csA_mkstmtlist();
+	csA_stmtlist head = NULL;
 	while (TRUE) {
+		if (!head) head = csA_mkstmtlist();
 		csA_stmt bar = p_stmt_();
 		if (!bar) break;
 		csA_stmtlistadd(head,bar);
 	}
 	return head;
 }
+
 static csA_stmt p_stmt_(void)
 {
 	csA_stmt foo = NULL;

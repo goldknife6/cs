@@ -125,6 +125,12 @@ static void p_immutable_(csA_immutable foo)
 	case csA_bool_:
 		fprintf(debugs,"%s", csA_immutbool(foo) ? "true" : "false");
 		break;
+	case csA_call_:
+		fprintf(debugs,"[");
+		p_exprlist_(csA_immutcallargs(foo));
+		fprintf(debugs,"]");
+		fprintf(debugs,"%s",csS_name(csA_immutcallid(foo)));
+		break;
 	default:
 		VERIFY(0);
 	}
@@ -362,6 +368,12 @@ static void p_stmt_(csA_stmt foo)
 		VERIFY(0);
 	}
 }
+
+static void p_arglist_(csA_arglist arg)
+{
+
+}
+
 static void p_expr_(csA_expr foo)
 {
 	if (!foo) return;

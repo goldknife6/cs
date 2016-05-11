@@ -32,11 +32,12 @@ struct c_address_ {
 	} u;
 };
 typedef enum {
-	csC_lable,csC_assign,csC_goto,
+	csC_lable,csC_assign,csC_goto,csC_not,
 	csC_iffalse,csC_if,csC_add,csC_call,
 	csC_param,csC_minus,csC_multiply,
 	csC_divide,csC_sub,csC_or,csC_and,
-	csC_return
+	csC_return,csC_eq,csC_neq,csC_lt,
+	csC_lq,csC_gt,csC_gq,
 } c_opkind_;
 
 struct c_quad_ {
