@@ -692,6 +692,8 @@ static csA_stmt p_stmt_(void)
 		MATCH(csL_SEMICOLON,"missing ;",sync);
 		break;
 	case csL_BREAK:
+		foo = csA_mkstmt();
+		foo->kind = csA_breakstmt;
 		MATCH(csL_BREAK,"missing break",sync);
 		MATCH(csL_SEMICOLON,"missing ;",sync);
 		break;

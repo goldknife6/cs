@@ -37,10 +37,10 @@ static csC_info c_uexpr_(csS_table vtab,csS_table ttab,csA_uexpr foo);
 static csC_info c_factor_(csS_table vtab,csS_table ttab,csA_factor foo);
 static csC_info c_immutable_(csS_table vtab,csS_table ttab,csA_immutable foo);
 static csC_info c_mutable_(csS_table vtab,csS_table ttab,csA_mutable foo);
-static csC_info c_stmtlist_(csS_table vtab,csS_table ttab,csA_stmtlist foo);
+static csC_info c_stmtlist_(csS_table vtab,csS_table ttab,csA_stmtlist foo,csT_label lable);
 static csC_info c_exprlist_(csS_table vtab,csS_table ttab,csA_exprlist foo);
 static csC_info c_expr_(csS_table vtab,csS_table ttab,csA_expr foo);
-static csC_info c_stmt_(csS_table vtab,csS_table ttab,csA_stmt foo);
+static csC_info c_stmt_(csS_table vtab,csS_table ttab,csA_stmt foo,csT_label lable);
 
 
 
@@ -211,7 +211,7 @@ static csC_info c_dec_(csS_table vtab,csS_table ttab,csA_dec foo)
 				c_locdeclist(vtab,ttab,list);
 			csA_stmtlist stmt = csA_decfunstmtlist(foo);
 			if (stmt)
-				c_stmtlist_(vtab,ttab,stmt);
+				c_stmtlist_(vtab,ttab,stmt,NULL);
 			csS_endscope(vtab);
 		}
 		c_procfrag_(quadlist,frame);
@@ -290,7 +290,7 @@ static csC_info c_exprlist_(csS_table vtab,csS_table ttab,csA_exprlist foo)
 	return inf;
 }
 
-static csC_info c_stmt_(csS_table vtab,csS_table ttab,csA_stmt pos)
+static csC_info c_stmt_(csS_table vtab,csS_table ttab,csA_stmt pos,csT_label lable)
 {
 	csC_info inf = c_info_();
 	VERIFY(pos);
@@ -307,7 +307,7 @@ static csC_info c_stmt_(csS_table vtab,csS_table ttab,csA_stmt pos)
 			csC_address arg1 = c_infotoaddr(inf);
 			c_quad_(arg1,c_address_(),res,csC_iffalse);
 			VERIFY(pos->u.ifstmt.ifs);
-			inf = c_stmt_(vtab,ttab,pos->u.ifstmt.ifs);
+			inf = c_stmt_(vtab,ttab,pos->u.ifstmt.ifs,lable);
 			csA_stmt elses = pos->u.ifstmt.elses;
 			csT_label L2 = NULL;
 			if (elses) {
@@ -316,7 +316,7 @@ static csC_info c_stmt_(csS_table vtab,csS_table ttab,csA_stmt pos)
 			}
 			c_quad_(c_address_(),c_address_(),res,csC_lable);
 			if (elses) {
-				inf = c_stmt_(vtab,ttab,elses);
+				inf = c_stmt_(vtab,ttab,elses,lable);
 				c_quad_(c_address_(),c_address_(),c_addresslable_(L2),csC_lable);
 			}
 			break;
@@ -327,24 +327,24 @@ static csC_info c_stmt_(csS_table vtab,csS_table ttab,csA_stmt pos)
 				c_locdeclist(vtab,ttab,list);
 			csA_stmtlist stmt = pos->u.comstmt.stmtlist;
 			if (stmt)
-				c_stmtlist_(vtab,ttab,stmt);
+				c_stmtlist_(vtab,ttab,stmt,lable);
 			break;
 		}
 		case csA_whilestmt:{
 			csA_exprlist list = pos->u.whestmt.list;
 			csA_stmt stmt = pos->u.whestmt.stmt;
 			VERIFY(list);VERIFY(stmt);
-			csT_label L1 = csT_newlabel();
-			csT_label L2 = csT_newlabel();
-			csC_address res = c_addresslable_(L1);
+			csT_label in = csT_newlabel();
+			csT_label out = csT_newlabel();
+			csC_address res = c_addresslable_(in);
 			csC_address arg1 = c_address_();
 			c_quad_(arg1,arg1,res,csC_lable);
 			inf = c_exprlist_(vtab,ttab,list);
 			arg1 = c_infotoaddr(inf);
-			c_quad_(arg1,c_address_(),c_addresslable_(L2),csC_iffalse);
-			inf = c_stmt_(vtab,ttab,stmt);
-			c_quad_(c_address_(),c_address_(),c_addresslable_(L1),csC_goto);
-			c_quad_(c_address_(),c_address_(),c_addresslable_(L2),csC_lable);
+			c_quad_(arg1,c_address_(),c_addresslable_(out),csC_iffalse);
+			inf = c_stmt_(vtab,ttab,stmt,out);
+			c_quad_(c_address_(),c_address_(),c_addresslable_(in),csC_goto);
+			c_quad_(c_address_(),c_address_(),c_addresslable_(out),csC_lable);
 			break;
 		}
 		case csA_forstmt: {
@@ -365,7 +365,7 @@ static csC_info c_stmt_(csS_table vtab,csS_table ttab,csA_stmt pos)
 			}
 			c_quad_(c_address_(),c_address_(),c_addresslable_(loopbody),csC_lable);
 			VERIFY(stmt);
-			inf = c_stmt_(vtab,ttab,stmt);
+			inf = c_stmt_(vtab,ttab,stmt,out);
 			if (list3)
 				inf = c_exprlist_(vtab,ttab,list3);
 			if (list2) {
@@ -387,20 +387,22 @@ static csC_info c_stmt_(csS_table vtab,csS_table ttab,csA_stmt pos)
 			break;
 		}
 		case csA_breakstmt: {
-			//c_quad_(arg1,c_address_(),c_addresslable_(loopbody),csC_goto);
+			VERIFY (lable);
+			c_quad_(c_address_(),c_address_(),c_addresslable_(lable),csC_goto);
+			break;
 		}
 		default:
 			VERIFY(0);
 	}
 	return inf;
 }
-static csC_info c_stmtlist_(csS_table vtab,csS_table ttab,csA_stmtlist foo)
+static csC_info c_stmtlist_(csS_table vtab,csS_table ttab,csA_stmtlist foo,csT_label lable)
 {
 	csC_info inf = c_info_();
 	csA_stmt pos;
 	
 	list_for_each_entry(pos, foo, next) {
-		inf = c_stmt_(vtab,ttab,pos);
+		inf = c_stmt_(vtab,ttab,pos,lable);
 	}
 	return inf;
 }
