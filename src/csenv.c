@@ -24,7 +24,9 @@ csS_table csE_basetype(void)
 
 csE_enventry csE_varentry(csT_type type,csF_access access,csS_symbol name)
 {
-	VERIFY(type);VERIFY(access);VERIFY(name);
+	if (!csG_error) {
+		VERIFY(type);VERIFY(access);VERIFY(name);
+	}
 	csE_enventry foo = csU_malloc(sizeof(*foo));
 	foo->kind = csE_var;
 	foo->u.var.type = type;
@@ -34,7 +36,9 @@ csE_enventry csE_varentry(csT_type type,csF_access access,csS_symbol name)
 }
 csE_enventry csE_funentry(csT_typelist formals,csT_type res,csS_symbol name,csF_frame frame)
 {
-	VERIFY(formals);VERIFY(res);VERIFY(name);VERIFY(frame);
+	if (!csG_error) {
+		VERIFY(formals);VERIFY(res);VERIFY(name);VERIFY(frame);
+	}
 	csE_enventry foo = csU_malloc(sizeof(*foo));
 	foo->kind = csE_fun;
 	foo->u.fun.res = res;

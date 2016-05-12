@@ -39,6 +39,14 @@ typedef struct list_head {
      for (pos = list_entry((head)->next, typeof(*pos), member);   \
           &pos->member != (head);      				  \
           pos = list_entry(pos->member.next, typeof(*pos), member))
+
+#define list_for_each_entry_2(pos1,pos2, head1,head2, member1,member2)\
+     for (pos1 = list_entry((head1)->next, typeof(*pos1), member1),   \
+     	  pos2 = list_entry((head2)->next, typeof(*pos2), member2);  \
+          (&pos1->member1) != (head1) && (&pos2->member2 != (head2));       \
+          pos1 = list_entry(pos1->member1.next, typeof(*pos1), member1),\
+          pos2 = list_entry(pos2->member2.next, typeof(*pos2), member2))
+
 static inline void INIT_LIST_HEAD(struct list_head *list)  
 {  
 	list->next = list;  

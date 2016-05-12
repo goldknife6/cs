@@ -4,14 +4,17 @@
 csT_typelist csT_mktypelist()
 {
 	csT_typelist foo = csU_malloc(sizeof(*foo));
-	INIT_LIST_HEAD(&foo->next);
+	INIT_LIST_HEAD(&foo->head);
 	return foo;
 }
 
 void csT_typelistadd(csT_typelist head,csT_type type)
 {
-	VERIFY(head);VERIFY(head);
-	list_add_tail(&type->next, &head->next);
+	VERIFY(head);VERIFY(type);
+	t_typelistentry_ foo = csU_malloc(sizeof(*foo));
+	INIT_LIST_HEAD(&foo->next);
+	foo->type = type;
+	list_add_tail(&foo->next, &head->head);
 }
 
 csG_bool CStypeEqual(csT_type foo,csT_type bar)

@@ -3,9 +3,13 @@
 #include "cslist.h"
 #include "csutil.h"
 #include <string.h>
+#include <stdarg.h>
+
 csC_fraglist fraglist = LIST_HEAD_INIT(fraglist);
 static csC_quadlist quadlist;
 static csF_frame curframe;
+static csT_type c_returnty_;
+
 
 static csC_info c_info_();
 static csC_quadlist c_quadlist_();
@@ -21,7 +25,7 @@ static csC_address c_addresslable_(csT_label lab);
 static csC_quad c_quad_(csC_address arg1,csC_address arg2,csC_address res,c_opkind_ op);
 static csC_info c_opdispatch_(csA_op op,csC_info inf,csC_info tmp);
 static void c_addrdispatch_(csA_op op,csC_address arg1,csC_address arg2,csC_address res);
-
+static void c_emsg_(csG_pos pos,char *message,...);
 
 
 static csC_info c_dec_(csS_table val,csS_table type,csA_dec list);
@@ -112,13 +116,19 @@ static csT_typelist c_mktypelist_(csS_table ttab,csA_paramlist foo)
 {
 	csT_typelist list = csT_mktypelist();
 	csA_param pos;
+	int i = 0;
+	if (!foo) return list;
 	list_for_each_entry(pos, foo, next) {
-		VERIFY(pos);
 		csS_symbol tyname = csA_paramtype(pos);
 		csT_type ty = csS_look(ttab, tyname);
-		VERIFY(ty);
+		if(!ty) {
+			c_emsg_(pos->pos,"unknown type %s",csS_name(tyname));
+			continue;
+		}
 		csT_typelistadd(list,ty);
+		i++;
 	}
+	list->count = i;
 	return list;
 }
 
@@ -167,15 +177,25 @@ static csC_info c_dec_(csS_table vtab,csS_table ttab,csA_dec foo)
 		csS_symbol tyname = csA_decvartype(foo);
 		csS_symbol name = csA_decvarname(foo);
 		csT_type ty = csS_look(ttab, tyname);
-		VERIFY(ty);
+		if(!ty) {
+			c_emsg_(foo->pos,"unknown type %s",csS_name(tyname));
+			break;
+		} else if (ty == csT_typevoid()) {
+			c_emsg_(foo->pos,"variable %s declared void",csS_name(name));
+			break;
+		}
 		csE_enventry e = csS_look(vtab, name);
-		VERIFY(!e);
-		csF_access access = csF_allocglobal(ty);
+		if(e) c_emsg_(foo->pos,"redefinition of variable %s",csS_name(name));
+		csF_access access = NULL;
+		if (ty) access = csF_allocglobal(ty);
 		e = csE_varentry(ty,access,name);
 		csS_insert(vtab, name, e);
 		csA_simplelist list = csA_decvarlist(foo);
 		if (list) {
 			csC_info info = c_simplelist_(vtab,ttab,list);
+			VERIFY(info.ty);
+			if (ty != info.ty) 
+				c_emsg_(foo->pos,"incompatible types when assigning");
 			c_frag_(access, info);
 		} else {
 			c_frag_(access, c_infoconst_(ty));
@@ -186,11 +206,11 @@ static csC_info c_dec_(csS_table vtab,csS_table ttab,csA_dec foo)
 		csS_symbol restype = csA_decfunrestype(foo);
 		csS_symbol name = csA_decfunname(foo);
 		csT_type ty = csS_look(ttab, restype);
-		VERIFY(ty);
+		if(!ty) c_emsg_(foo->pos,"unknown return type %s for function %s",csS_name(restype),csS_name(name));
+		c_returnty_ = ty;
 		csE_enventry e = csS_look(vtab, name);
-		VERIFY(!e);
+		if(e) c_emsg_(foo->pos,"redefinition of function %s",csS_name(name));
 		csA_paramlist plist = csA_decfunparamlist(foo);
-		VERIFY(plist);
 		csT_typelist list = c_mktypelist_(ttab,plist);
 		csF_frame frame = csF_newframe(name);
 		curframe = frame;
@@ -200,11 +220,18 @@ static csC_info c_dec_(csS_table vtab,csS_table ttab,csA_dec foo)
 		{
 			csS_beginscope(vtab);
 			csA_param pos = NULL;
-			list_for_each_entry(pos, plist, next) {
-				csF_access access = csF_alloclocal(frame);
-				csT_type type = csS_look(ttab, csA_paramtype(pos));
-				csS_symbol name = csA_paramname(pos);
-				csS_insert(vtab, name, csE_varentry(type,access,name));
+			if (plist) {
+				list_for_each_entry(pos, plist, next) {
+					csF_access access = csF_alloclocal(frame);
+					csT_type type = csS_look(ttab, csA_paramtype(pos));
+					csS_symbol name = csA_paramname(pos);
+					VERIFY(name);
+					if (csS_looktop(vtab,name)) {
+						c_emsg_(foo->pos,"redefinition of parameter %s",csS_name(name));
+					} else {
+						csS_insert(vtab, name, csE_varentry(type,access,name));
+					}
+				}
 			}
 			c_quadlist_();
 			c_quad_(c_address_(),c_address_(),c_addresslable_(lable),csC_lable);
@@ -232,19 +259,26 @@ static csC_info c_locdeclist(csS_table vtab,csS_table ttab,csA_locdeclist list)
 	VERIFY(list);
 	csA_locdec pos = NULL;
 	list_for_each_entry(pos, list, next) {
-		VERIFY(pos);
 		csS_symbol tyname = csA_locdectype(pos);
 		csS_symbol name = csA_locdecname(pos);
 		csT_type ty = csS_look(ttab, tyname);
-		VERIFY(ty);
+		if(!ty) {
+			c_emsg_(pos->pos,"unknown type %s",csS_name(tyname));
+			break;
+		} else if (ty == csT_typevoid()) {
+			c_emsg_(pos->pos,"variable %s declared void",csS_name(name));
+			break;
+		}
 		csE_enventry e = csS_looktop(vtab, name);
-		VERIFY(!e);
+		if(e) c_emsg_(pos->pos,"redefinition of variable %s",csS_name(name));
 		csF_access access = csF_alloclocal(curframe);
 		csA_simplelist list = csA_locdecsimlist(pos);
 		if (list) {
 			csC_info tmp = c_simplelist_(vtab,ttab,list);
 			csE_enventry env = csE_varentry(ty,access,name);
-
+			VERIFY(tmp.ty);
+			if (ty != tmp.ty) 
+				c_emsg_(pos->pos,"incompatible types when assigning");
 			csC_address arg1 = c_infotoaddr(tmp);
 			csC_address arg2 = c_address_();
 			csC_address res = c_addressenv_(env);
@@ -267,10 +301,17 @@ static csC_info c_expr_(csS_table vtab,csS_table ttab,csA_expr foo)
 	case csA_asgn_: {
 		VERIFY(csA_exprmut(foo));
 		inf = c_mutable_(vtab,ttab,csA_exprmut(foo));
+		csT_type mutty = inf.ty;
+		VERIFY(mutty);
+		
 		csC_address res = c_infotoaddr(inf);
 		csC_address arg2 = c_address_();
 		VERIFY(csA_exprexpr(foo));
 		inf = c_expr_(vtab,ttab,csA_exprexpr(foo));
+		csT_type exprty = inf.ty;
+		VERIFY(exprty);
+		if (exprty != mutty) 
+			c_emsg_(foo->pos,"incompatible types when assigning");
 		csC_address arg1 = c_infotoaddr(inf);
 		c_quad_(arg1,arg2,res,csC_assign);
 		break;
@@ -342,6 +383,9 @@ static csC_info c_stmt_(csS_table vtab,csS_table ttab,csA_stmt pos,csT_label lab
 			csC_address arg1 = c_address_();
 			c_quad_(arg1,arg1,res,csC_lable);
 			inf = c_exprlist_(vtab,ttab,list);
+			VERIFY(inf.ty);
+			if (inf.ty != csT_typebool()) 
+				c_emsg_(pos->pos,"expression type in while statement must be bool");
 			arg1 = c_infotoaddr(inf);
 			c_quad_(arg1,c_address_(),c_addresslable_(out),csC_iffalse);
 			inf = c_stmt_(vtab,ttab,stmt,out);
@@ -362,6 +406,9 @@ static csC_info c_stmt_(csS_table vtab,csS_table ttab,csA_stmt pos,csT_label lab
 			csC_address arg1 = c_address_();
 			if (list2) {
 				inf = c_exprlist_(vtab,ttab,list2);
+				VERIFY(inf.ty);
+				if (inf.ty != csT_typebool()) 
+					c_emsg_(pos->pos,"2th expression type in for statement must be bool");
 				arg1 = c_infotoaddr(inf);
 				c_quad_(arg1,c_address_(),c_addresslable_(out),csC_iffalse);
 			}
@@ -379,18 +426,29 @@ static csC_info c_stmt_(csS_table vtab,csS_table ttab,csA_stmt pos,csT_label lab
 			break;
 		}
 		case csA_returnstmt: {
+			VERIFY(c_returnty_);
 			csA_exprlist list = pos->u.retstmt.list;
 			csC_address arg1 = c_address_();
-			if (list) {
+			if (list && c_returnty_ == csT_typevoid()) {
+				c_emsg_(pos->pos,"return with a value, in function returning void");
+			} else if (!list && c_returnty_ != csT_typevoid()) {
+				c_emsg_(pos->pos,"with no value, in function returning non-void");
+			} else if (list) {
 				inf = c_exprlist_(vtab,ttab,list);
 				arg1 = c_infotoaddr(inf);
+				if (!csG_error)
+					VERIFY(inf.ty);
+				if (inf.ty != c_returnty_)
+					c_emsg_(pos->pos,"return type is wrong");
 			}
 			c_quad_(c_address_(),c_address_(),arg1,csC_return);
 			break;
 		}
 		case csA_breakstmt: {
-			VERIFY (lable);
-			c_quad_(c_address_(),c_address_(),c_addresslable_(lable),csC_goto);
+			if (!lable)
+				c_emsg_(pos->pos,"break statement not whthin for or while statement");
+			else
+				c_quad_(c_address_(),c_address_(),c_addresslable_(lable),csC_goto);
 			break;
 		}
 		default:
@@ -398,11 +456,12 @@ static csC_info c_stmt_(csS_table vtab,csS_table ttab,csA_stmt pos,csT_label lab
 	}
 	return inf;
 }
+
 static csC_info c_stmtlist_(csS_table vtab,csS_table ttab,csA_stmtlist foo,csT_label lable)
 {
+	VERIFY(foo);
 	csC_info inf = c_info_();
 	csA_stmt pos;
-	
 	list_for_each_entry(pos, foo, next) {
 		inf = c_stmt_(vtab,ttab,pos,lable);
 	}
@@ -413,7 +472,7 @@ static csC_info c_simplelist_(csS_table vtab,csS_table ttab,csA_simplelist foo)
 {
 	csC_info inf = c_info_();
 	csA_simpleexpr pos;
-	if (!foo) VERIFY(0);
+	VERIFY(foo);
 	list_for_each_entry(pos, foo, next) {
 		csC_info tmp = c_andlist_(vtab,ttab,csA_simpleexprand(pos));
 		if (inf.kind != c_empty_) {
@@ -439,12 +498,13 @@ static csC_info c_andlist_(csS_table vtab,csS_table ttab,csA_andlist foo)
 {
 	csC_info inf = c_info_();
 	csA_andexpr pos;
-	if (!foo) VERIFY(0);
+	VERIFY(foo);
 	list_for_each_entry(pos, foo, next) {
 		csC_info tmp = c_urelexpr_(vtab,ttab,csA_andexprurel(pos));
 		if (inf.kind != c_empty_) {
-			VERIFY(tmp.ty);
-			VERIFY(tmp.ty->kind == csT_bool);
+			VERIFY(tmp.ty);VERIFY(inf.ty);
+			if (tmp.ty != csT_typebool() || inf.ty != csT_typebool())
+				c_emsg_(pos->pos,"and expression type must be bool");
 			if (tmp.kind == c_boolconst_ && inf.kind == c_boolconst_)
 				tmp.u.boolconst = inf.u.boolconst && tmp.u.boolconst;
 			else {
@@ -463,8 +523,8 @@ static csC_info c_andlist_(csS_table vtab,csS_table ttab,csA_andlist foo)
 
 static csC_info c_urelexpr_(csS_table vtab,csS_table ttab,csA_urelexpr foo)
 {
-	csC_info inf;
-	VERIFY(foo);//csC_not
+	csC_info inf = c_info_();
+	VERIFY(foo);
 	csA_relexpr rel = csA_urelexprrel(foo);
 	VERIFY(rel);
 	inf = c_relexpr_(vtab,ttab,rel);
@@ -485,7 +545,7 @@ static csC_info c_urelexpr_(csS_table vtab,csS_table ttab,csA_urelexpr foo)
 
 static csC_info c_relexpr_(csS_table vtab,csS_table ttab,csA_relexpr foo)
 {
-	csC_info inf1;
+	csC_info inf1 = c_info_();
 	VERIFY(foo);
 	csA_sumexprlist list1 = csA_relexprsum1(foo);
 	VERIFY(list1);
@@ -534,7 +594,7 @@ static csC_info c_relexpr_(csS_table vtab,csS_table ttab,csA_relexpr foo)
 
 static csC_info c_sumexprlist_(csS_table vtab,csS_table ttab,csA_sumexprlist foo)
 {
-	csC_info inf;
+	csC_info inf = c_info_();
 	csA_sumexpr pos;
 	VERIFY(foo);
 	csA_op op  = 0;
@@ -542,7 +602,14 @@ static csC_info c_sumexprlist_(csS_table vtab,csS_table ttab,csA_sumexprlist foo
 		csC_info tmp = c_termlist_(vtab,ttab,csA_sumexprterm(pos));
 		if (op) {
 			VERIFY(tmp.ty);
-			VERIFY(tmp.ty->kind == csT_int || tmp.ty->kind == csT_string);
+			if (tmp.ty != inf.ty) {
+				c_emsg_(pos->pos,"invalid operands to binary sumexpr");
+				break;
+			} else if (tmp.ty != csT_typeint() && tmp.ty != csT_typestring()) {
+				c_emsg_(pos->pos,"invalid operands to binary sumexpr");
+				break;
+			}
+
 			if (tmp.kind == c_intconst_ && inf.kind == c_intconst_) {
 				tmp = c_opdispatch_(op,inf,tmp);
 			} else if (tmp.kind == c_strconst_ && inf.kind == c_strconst_) {
@@ -641,18 +708,47 @@ static csC_info c_immutable_(csS_table vtab,csS_table ttab,csA_immutable foo)
     	break;
     case csA_call_:{
     	csA_arglist arglist = csA_immutcallargs(foo);
-    	inf = c_arglist_(vtab,ttab,arglist);
     	csC_address res = c_addresstemp_(csT_newtemp());
     	csC_address arg1,arg2;
     	csS_symbol funname = csA_immutcallid(foo);
     	VERIFY(funname);
     	csE_enventry e = csS_look(vtab,funname);
-    	VERIFY(e);
+    	if (!e) {
+    		c_emsg_(csA_immutpos(foo),"implicit declaration of function %s",csS_name(funname));
+    		return inf;
+    	}
+    	csT_type resty = e->u.fun.res;
+    	csT_typelist formals = e->u.fun.formals;
+    	t_typelistentry_ pos1 = NULL;
+    	csA_expr pos2 = NULL;
+    	int count = 0;
+    	if (arglist) {
+    		VERIFY(formals);
+	    	list_for_each_entry_2(pos1,pos2, &formals->head,arglist, next,next) {
+	    		count++;
+	    		csT_type ty = pos1->type;
+	    		inf = c_expr_(vtab,ttab,pos2);
+				csC_address res = c_infotoaddr(inf);
+				c_quad_(c_address_(),c_address_(),res,csC_param);
+				VERIFY(inf.ty);
+				if (inf.ty != ty) {
+					c_emsg_(csA_immutpos(foo),"%dth argument type is wrong at function %s",count,csS_name(funname));
+				}
+	    	}
+	    	if (list_is_last(&pos2->next,arglist) != list_is_last(&pos1->next,&formals->head)) {
+    			c_emsg_(csA_immutpos(foo),"wrong number of arguments at function %s",csS_name(funname));
+    		}
+    	} else {
+    		VERIFY(formals);
+    		if (formals->count != 0)
+    			c_emsg_(csA_immutpos(foo),"wrong number of arguments at function %s",csS_name(funname));
+    	}
     	arg1 = c_addressenv_(e);
-    	arg2 = c_infotoaddr(inf);
+    	arg2 = c_addressint_(count);
     	c_quad_(arg1,arg2,res,csC_call);
     	inf.kind = c_addr_;
     	inf.u.addr = res;
+    	inf.ty = resty;
     	break;
     }
     default:
@@ -683,14 +779,20 @@ static csC_info c_arglist_(csS_table vtab,csS_table ttab,csA_arglist foo)
 static csC_info c_mutable_(csS_table vtab,csS_table ttab,csA_mutable foo)
 {
 	csC_info inf;
+	inf.kind = c_addr_;
+	inf.u.addr = c_address_();
 	VERIFY(foo);
 	csS_symbol id = csA_mutid(foo);
 	csE_enventry e = csS_look(vtab, id);
-	VERIFY(e);
+	if (!e) {
+		c_emsg_(foo->pos,"unknown variable %s",csS_name(id));
+		return inf;
+	}
 	VERIFY(e->kind == csE_var);
 	inf.ty = e->u.var.type;
-	VERIFY(inf.ty);
-	inf.kind = c_addr_;
+	if (!csG_error)
+		VERIFY(inf.ty);
+	
 	inf.u.addr = c_addressenv_(e);
 	return inf;
 }
@@ -732,7 +834,7 @@ static csC_address c_addressenv_(csE_enventry eval)
 	csC_address addr;
 	addr.kind = csC_env;
 	addr.u.eval = eval;
-	VERIFY(eval);
+	//VERIFY(eval);
 	return addr;
 }
 
@@ -755,13 +857,16 @@ static csC_address c_addresslable_(csT_label lab)
 
 static csC_quad c_quad_(csC_address arg1,csC_address arg2,csC_address res,c_opkind_ op)
 {
+	if(!quadlist || csG_error)
+		return NULL;
+
 	csC_quad foo = csU_malloc(sizeof(*foo));
 	foo->arg1 = arg1;
 	foo->arg2 = arg2;
 	foo->res = res;
 	foo->kind = op;
 	INIT_LIST_HEAD(&foo->next);
-	if(quadlist)
+	
 		list_add_tail(&foo->next, quadlist);
 	return foo;
 }
@@ -837,4 +942,17 @@ static void c_addrdispatch_(csA_op op,csC_address arg1,csC_address arg2,csC_addr
 	default:
 		VERIFY(0);
 	}
+}
+
+static void c_emsg_(csG_pos pos,char *message,...)
+{
+	va_list ap;
+	csG_error = TRUE;
+	VERIFY(message);
+	if (filename) fprintf(errors,"%s:",filename);
+	fprintf(errors,"%d:%d:",pos.row,pos.col);
+	va_start(ap,message);
+	vfprintf(errors, message, ap);
+	fprintf(errors,"\n");
+	va_end(ap);
 }

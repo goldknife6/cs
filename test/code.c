@@ -12,8 +12,8 @@ void testcode(void)
 	csS_table val = csE_baseval();
 	csS_table type = csE_basetype();
 	c_declist_(val,type,list);
-
-	csC_printcode();
+	if (!csG_error)
+		csC_printcode();
 }
 static void csC_printcode()
 {

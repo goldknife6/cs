@@ -35,8 +35,13 @@ struct t_fieldlist_ {
 	csL_list head;
 };
 
-struct t_typelist_ {
+typedef struct t_typelistentry_ {
 	csL_list next;
+	csT_type type;
+}*t_typelistentry_;
+
+struct t_typelist_ {
+	csL_list head;
 	int count;
 };
 extern csT_typelist csT_mktypelist();

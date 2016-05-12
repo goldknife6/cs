@@ -123,6 +123,7 @@ static csA_dec p_dec_(void)
 		if (stmt) csA_setdecfunstmtlist(stmt,foo);
 		MATCH(csL_RBRACE,"missing }",sync);
 	}
+	foo->pos = pos;
 	return foo;
 sync:
 	VERIFY(0);
@@ -162,6 +163,7 @@ sync:
 static csA_param p_param_(void)
 {
 	csA_param foo = csA_mkparam();
+	csG_pos pos = token.pos;
 	if (token.kind == csL_ID) {
 		csG_string name = csL_tokenstr(token);
 		csA_setparamtype(foo,csS_mksymbol(name));
@@ -172,6 +174,7 @@ static csA_param p_param_(void)
 		csA_setparamname(foo,csS_mksymbol(name));
 	}
 	MATCH(csL_ID,"missing id",sync);
+	foo->pos = pos;
 	return foo;
 sync:
 	VERIFY(0);
@@ -213,6 +216,7 @@ static csA_expr p_expr_(void)
 	csA_simplelist bar = NULL;
 	csA_mutable mut = NULL;
 	csA_expr e = NULL;
+	csG_pos pos = token.pos;
 	switch(token.kind) {
 	case csL_NOT:case csL_MINUS:case csL_LPAREN:
 	case csL_LBRACK:case csL_NUM:case csL_CHAR:
@@ -236,6 +240,7 @@ static csA_expr p_expr_(void)
 	default:
 		VERIFY(0);
 	}
+	foo->pos = pos;
 	return foo;
 sync:
 	VERIFY(0);
@@ -244,12 +249,14 @@ sync:
 static csA_mutable p_mutable_(void)
 {
 	csA_mutable foo = NULL;
+	csG_pos pos = token.pos;
 	if (token.kind == csL_ID) {
 		foo = csA_mkmut();
 		csG_string name = csL_tokenstr(token);
 		csA_setmutid(foo,csS_mksymbol(name));
 	}
 	MATCH(csL_ID,"missing mutable",sync);
+	foo->pos = pos;
 	return foo;
 sync:
 	VERIFY(0);
@@ -258,6 +265,7 @@ sync:
 static csA_immutable p_immutable_(void)
 {
 	csA_immutable foo = csA_mkimmut();
+	csG_pos pos = token.pos;
 	switch (token.kind) {
 	case csL_NUM:
 		csA_setimmutnum(foo,csL_tokennum(token));
@@ -292,6 +300,7 @@ static csA_immutable p_immutable_(void)
 	default:
 		VERIFY(0);
 	}
+	foo->pos = pos;
 	return foo;
 sync:
 	VERIFY(0);
@@ -307,6 +316,7 @@ static csA_factor p_factor_(void)
 	csA_factor foo = csA_mkfactor();
 	csA_mutable mut = NULL;
 	csA_immutable immut = NULL;
+	csG_pos pos = token.pos;
 	switch (token.kind) {
 	case csL_ID:
 		mut = p_mutable_();
@@ -324,6 +334,7 @@ static csA_factor p_factor_(void)
 		csL_prttoken(token);
 		VERIFY(0);
 	}
+	foo->pos = pos;
 	return foo;
 sync:
 	VERIFY(0);
@@ -332,6 +343,7 @@ sync:
 static csA_uexpr p_unaryexpr_(void)
 {
 	csA_uexpr foo = csA_mkuexpr();
+	csG_pos pos = token.pos;
 	if (token.kind == csL_MINUS) {
 		MATCH(csL_MINUS,"missing -",sync);
 		foo->flags = TRUE;
@@ -340,17 +352,20 @@ static csA_uexpr p_unaryexpr_(void)
 	csA_factor fac = p_factor_();
 	VERIFY(fac);
 	csA_setuexpr(foo,fac);
+	foo->pos = pos;
 	return foo;
 sync:
 	VERIFY(0);
 }
 
 static csA_term p_term_(void)
-{
+{	
+	csG_pos pos = token.pos;
 	csA_term foo = csA_mkterm();
 	csA_uexpr bar = p_unaryexpr_();
 	VERIFY(bar);
 	csA_settermuexpr(foo,bar);
+	foo->pos = pos;
 	return foo;
 sync:
 	VERIFY(0);
@@ -360,14 +375,17 @@ static csA_termlist p_termlist_(void)
 {
 	csA_termlist foo = NULL;
 	csA_term bar = NULL;
+	csG_pos pos ;
 loop:
 	switch (token.kind) {
 	case csL_MINUS:case csL_LPAREN:case csL_LBRACK:
 	case csL_NUM:case csL_CHAR:case csL_STRING:
 	case csL_TRUE:case csL_FALSE:case csL_ID:
 		if (!foo) foo = csA_mktermlist();
+		pos = token.pos;
 		bar = p_term_();
 		VERIFY(bar);
+		bar->pos;
 		csA_termlistadd(foo,bar);
 		switch (token.kind) {
 		case csL_TIMES:	
@@ -377,6 +395,7 @@ loop:
 			csA_settermop(bar,csA_divide);
 			break;
 		default:
+			
 			return foo;
 		}
 		MATCH(token.kind,"missing mulop",sync);
@@ -394,6 +413,7 @@ static csA_urelexpr p_urelexpr_(void)
 {
 	csA_urelexpr foo = csA_mkurelexpr();
 	csA_relexpr bar = NULL;
+	csG_pos pos = token.pos;
 	if(token.kind == csL_NOT) {
 		MATCH(csL_NOT,"missing !",sync);
 		foo->flags = TRUE;
@@ -401,6 +421,7 @@ static csA_urelexpr p_urelexpr_(void)
 	bar = p_relexpr_();
 	VERIFY(bar);
 	csA_seturelexprrel(foo,bar);
+	foo->pos = pos;
 	return foo;
 sync:
 	VERIFY(0);
@@ -408,6 +429,7 @@ sync:
 
 static csA_relexpr p_relexpr_(void)
 {
+	csG_pos pos = token.pos;
 	csA_relexpr foo = csA_mkrelexpr();
 	csA_sumexprlist sum1 = p_sumexprlist_();
 	csA_sumexprlist sum2 = NULL;
@@ -428,6 +450,7 @@ static csA_relexpr p_relexpr_(void)
 	case csL_GE:
 		csA_setrelexprop(foo,csA_gq);break;
 	default:
+		foo->pos = pos;
 		return foo;
 	}
 
@@ -435,6 +458,7 @@ static csA_relexpr p_relexpr_(void)
 	sum2 = p_sumexprlist_();
 	if (!sum2) goto sync;
 	csA_setrelexprsum2(foo,sum2);
+	foo->pos = pos;
 	return foo;
 sync:
 	VERIFY(0);
@@ -442,10 +466,12 @@ sync:
 
 static csA_sumexpr p_sumexpr_(void)
 {
+	csG_pos pos = token.pos;
 	csA_sumexpr foo = csA_mksumexpr();
 	csA_termlist bar = p_termlist_();
 	VERIFY(bar);
 	csA_setsumexprterm(foo,bar);
+	foo->pos = pos;
 	return foo;
 sync:
 	VERIFY(0);
@@ -496,6 +522,7 @@ csA_andlist p_andlist_(void)
 {
 	csA_andlist foo = NULL;
 	csA_andexpr bar = NULL;
+	csG_pos pos;
 loop:
 	switch (token.kind) {
 	case csL_NOT:case csL_MINUS:case csL_LPAREN:
@@ -503,9 +530,11 @@ loop:
 	case csL_TRUE:case csL_FALSE:case csL_STRING:
 	case csL_ID:
 		if (!foo) foo = csA_mkandlist();
+		pos = token.pos;
 		bar = p_andexpr_();
 		if(bar) csA_andlistadd(foo,bar);
 		else VERIFY(0);
+		bar->pos = pos;
 		switch (token.kind) {
 		case csL_AND:
 			MATCH(csL_AND,"missing &",sync);
@@ -524,10 +553,11 @@ sync:
 csA_simpleexpr p_simpleexpr_(void)
 {
 	csA_simpleexpr foo = csA_mksimpleexpr();
-
+	csG_pos pos = token.pos;
 	csA_andlist bar = p_andlist_();
 	VERIFY(bar);
 	csA_setsimpleexprand(foo,bar);
+	foo->pos = pos;
 	return foo;
 }
 
@@ -535,6 +565,7 @@ csA_simplelist p_simplelist_(void)
 {
 	csA_simplelist foo = NULL;
 	csA_simpleexpr bar = NULL;
+	csG_pos pos;
 loop:
 	switch (token.kind) {
 	case csL_NOT:case csL_MINUS:case csL_LPAREN:
@@ -542,9 +573,11 @@ loop:
 	case csL_TRUE:case csL_FALSE:case csL_STRING:
 	case csL_ID:
 		if (!foo) foo = csA_mksimplelist();
+		pos = token.pos;
 		bar = p_simpleexpr_();
 		if(bar) csA_simplelistadd(foo,bar);
 		else VERIFY(0);
+		bar->pos = pos;
 		switch (token.kind) {
 		case csL_OR:
 			MATCH(csL_OR,"missing |",sync);
@@ -563,6 +596,7 @@ sync:
 static csA_locdec p_locvardec_(void)
 {
 	csA_locdec foo = csA_mklocdec();
+	csG_pos pos = token.pos;
 	if (token.kind == csL_VAR) {
 		MATCH(csL_VAR,"missing var",sync); //eat var keyword
 		if (token.kind == csL_ID) {		//eat type-id
@@ -582,6 +616,7 @@ static csA_locdec p_locvardec_(void)
 			csA_setlocdecsimlist(foo,list);
 		}
 		MATCH(csL_SEMICOLON,"missing ;",sync);
+		foo->pos = pos;
 		return foo;
 	} 
 sync:
@@ -621,12 +656,14 @@ static csA_stmtlist p_stmtlist_(void)
 static csA_stmt p_stmt_(void)
 {
 	csA_stmt foo = NULL;
+	csG_pos pos = token.pos;
 	switch(token.kind) {
 	case csL_DOLLAR:case csL_NOT:case csL_MINUS:
 	case csL_LPAREN:case csL_LBRACK:case csL_NUM:
 	case csL_CHAR:case csL_TRUE:case csL_FALSE:
 	case csL_STRING:case csL_ID: {
 		foo = csA_mkstmt();
+		foo->pos = pos;
 		csA_exprlist list = p_exprlist_();
 		foo->kind = csA_exprstmt;
 		foo->u.exprList = list;
@@ -635,12 +672,14 @@ static csA_stmt p_stmt_(void)
 	}
 	case csL_SEMICOLON:/*empty stmt*/
 		foo = csA_mkstmt();
+		foo->pos = pos;
 		foo->kind = csA_exprstmt;
 		foo->u.exprList = NULL;
 		MATCH(csL_SEMICOLON,"missing ;",sync);
 		break;
 	case csL_IF:{/*ifStmt → if ( exprList ) stmt [ else stmt ]*/
 		foo = csA_mkstmt();
+		foo->pos = pos;
 		foo->kind = csA_ifstmt;
 		MATCH(csL_IF,"missing if",sync);
 		MATCH(csL_LPAREN,"missing (",sync);
@@ -658,6 +697,7 @@ static csA_stmt p_stmt_(void)
 	case csL_FOR:{//struct { csA_exprlist list1,list2,list3;csA_stmt stmt;} forstmt;
 		csA_exprlist list = NULL;
 		foo = csA_mkstmt();
+		foo->pos = pos;
 		foo->kind = csA_forstmt;
 		MATCH(csL_FOR,"missing for",sync);
 		MATCH(csL_LPAREN,"missing (",sync);
@@ -678,6 +718,7 @@ static csA_stmt p_stmt_(void)
 	case csL_WHILE: {
 		MATCH(csL_WHILE,"missing while",sync);
 		foo = csA_mkstmt();
+		foo->pos = pos;
 		MATCH(csL_LPAREN,"missing (",sync);
 		foo->kind = csA_whilestmt;
 		csA_exprlist list = p_exprlist_();
@@ -692,6 +733,7 @@ static csA_stmt p_stmt_(void)
 	case csL_LBRACE:{
 		MATCH(csL_LBRACE,"missing {",sync);
 		foo = csA_mkstmt();
+		foo->pos = pos;
 		foo->kind = csA_compoundstmt;
 		csA_locdeclist var = p_locvardeclist_();
 		csA_stmtlist stmt = p_stmtlist_();
@@ -703,12 +745,14 @@ static csA_stmt p_stmt_(void)
 	case csL_RETURN:
 		MATCH(csL_RETURN,"missing return",sync);
 		foo = csA_mkstmt();
+		foo->pos = pos;
 		foo->kind = csA_returnstmt;
 		foo->u.retstmt.list = p_exprlist_();
 		MATCH(csL_SEMICOLON,"missing ;",sync);
 		break;
 	case csL_BREAK:
 		foo = csA_mkstmt();
+		foo->pos = pos;
 		foo->kind = csA_breakstmt;
 		MATCH(csL_BREAK,"missing break",sync);
 		MATCH(csL_SEMICOLON,"missing ;",sync);
