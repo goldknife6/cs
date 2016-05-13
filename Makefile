@@ -11,7 +11,8 @@ TARGET 		= cshort
 OBJDIR 		= obj
 TESTDIR 	= test
 SRC			= src
-FILES 		= cslex.o cshash.o csutil.o cssymbol.o cstype.o csenv.o cstemp.o  csparser.o csast.o cscode.o csframe.o csopcodes.o csbytec.o
+FILES 		= cslex.o cshash.o csutil.o cssymbol.o cstype.o csenv.o cstemp.o  \
+	csparser.o csast.o cscode.o csframe.o csopcodes.o csbytec.o csformat.o
 OBJFILES 	= $(patsubst %.o,$(OBJDIR)/%.o,$(FILES))
 DEPS 		= $(patsubst %.o,%.d,$(OBJFILES))
 

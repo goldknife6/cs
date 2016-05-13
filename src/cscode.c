@@ -312,7 +312,7 @@ static csC_info c_expr_(csS_table vtab,csS_table ttab,csA_expr foo)
 		VERIFY(csA_exprmut(foo));
 		inf = c_mutable_(vtab,ttab,csA_exprmut(foo));
 		csT_type mutty = inf.ty;
-		VERIFY(mutty);
+		//VERIFY(mutty);
 		
 		csC_address res = c_infotoaddr(inf);
 		csC_address arg2 = c_address_();
