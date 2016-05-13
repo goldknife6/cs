@@ -21,7 +21,7 @@ struct f_access_ {
 
 struct f_frame_ {
 	csT_label name; 
-	int framesize ;
+	int framesize;
 };
 
 extern csF_frame csF_newframe(csT_label name); 

@@ -32,6 +32,7 @@ struct c_address_ {
 	} u;
 };
 typedef enum {
+	csC_func,
 	csC_lable,csC_assign,csC_goto,csC_not,
 	csC_iffalse,csC_if,csC_add,csC_call,
 	csC_param,csC_minus,csC_multiply,

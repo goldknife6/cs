@@ -13,6 +13,7 @@ void testlex(void);
 void testsym(void);
 void testparser(void);
 void testcode(void);
+void csB_genbytecode();
 
 csG_bool csG_error = FALSE;
 int main(int argc, char *argv[])
@@ -34,7 +35,8 @@ int main(int argc, char *argv[])
 	//testlex();
 	//testsym();
 	//testparser();
-	testcode();
+	//testcode();
+	csB_genbytecode();
 	return 0;
 }
 

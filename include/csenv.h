@@ -15,6 +15,7 @@ struct e_env_ {
 		struct {
 			csT_type type;
 			csF_access access;
+			int reg;
 		} var;
 		struct {
 			csT_typelist formals;

@@ -59,7 +59,7 @@ void csH_tabfree(csH_table tab)
 
 void csH_tabinsert(csH_table tab, void *key, void *value)
 {
- 	VERIFY(tab);VERIFY(key);
+ 	VERIFY(tab);
  	csH_bucket foo;
  	unsigned long index = hash(key,tab->hfp) % TABSIZE;
  	foo = bucket(key, value,NULL);
@@ -68,7 +68,7 @@ void csH_tabinsert(csH_table tab, void *key, void *value)
 
 void *csH_tablook(csH_table tab, void *key)
 {
- 	VERIFY(tab);VERIFY(key);
+ 	VERIFY(tab);
 	unsigned long index = hash(key,tab->hfp) % TABSIZE;
 	csL_hlisth head = tab->bucket[index];
 	csH_bucket pos = NULL;
@@ -95,7 +95,6 @@ void csH_tabdump(csH_table tab, csH_tabshowfp fp)
 
 static csH_bucket bucket(void *key, void *value, csH_bucket next)
 {
-	VERIFY(key);
 	csH_bucket b = csU_malloc(sizeof(*b));
  	b->key = key; 
  	b->value=value; 

@@ -4,6 +4,9 @@
 #include "cssymbol.h"
 
 typedef struct t_temp_ *csT_temp;
+struct t_temp_ {
+	int num;
+};
 extern csT_temp csT_newtemp(void);
 
 typedef struct t_templist_ *csT_templist;

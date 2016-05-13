@@ -2,17 +2,19 @@
 #include "cslist.h"
 #include "csutil.h"
 
-struct t_temp_ {
-	int num;
-};
+
 
 struct t_templist_ {
 	csL_list head;
 };
 
+struct t_label_ {
+	int num;
+};
+
 csT_temp csT_newtemp(void)
 {
-	static int count;
+	static int count = 1;
 	csT_temp foo = csU_malloc(sizeof(*foo));
 	foo->num = count++;
 	return foo;

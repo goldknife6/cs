@@ -19,7 +19,7 @@
 
 typedef char *csG_string;
 typedef unsigned int csG_bool;
-typedef char csG_byte;
+
 
 
 extern FILE *ins;		//input stream

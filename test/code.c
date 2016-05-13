@@ -5,7 +5,7 @@
 static void c_printaddr(csC_address addr);
 static void c_printquad(csC_quad quad);
 static void c_printfrag(csC_frag frag);
-static void csC_printcode();
+void csC_printcode();
 void testcode(void)
 {
 	csA_declist list = parser();
@@ -15,7 +15,7 @@ void testcode(void)
 	if (!csG_error)
 		csC_printcode();
 }
-static void csC_printcode()
+void csC_printcode()
 {
 	csC_frag pos = NULL;
 	list_for_each_entry(pos, &fraglist, next) {
@@ -59,6 +59,10 @@ static void c_printquad(csC_quad quad)
 	VERIFY(quad);
 
 	switch (quad->kind) {
+	case csC_func:
+ 		fprintf(debugs, "func: ");
+ 		c_printaddr(quad->res);
+ 		break;
  	case csC_lable:
  		fprintf(debugs, "labal: ");
  		c_printaddr(quad->res);

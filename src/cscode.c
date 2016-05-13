@@ -214,12 +214,13 @@ static csC_info c_dec_(csS_table vtab,csS_table ttab,csA_dec foo)
 		csT_typelist list = c_mktypelist_(ttab,plist);
 		csF_frame frame = csF_newframe(name);
 		curframe = frame;
-		csT_label lable = csT_namedlabel(csS_name(name));
+		//csT_label lable = csT_namedlabel(csS_name(name));
 		e = csE_funentry(list,ty,name,frame);
 		csS_insert(vtab, name, e);
 		{
 			csS_beginscope(vtab);
 			csA_param pos = NULL;
+			int regnum = 0;
 			if (plist) {
 				list_for_each_entry(pos, plist, next) {
 					csF_access access = csF_alloclocal(frame);
@@ -231,13 +232,18 @@ static csC_info c_dec_(csS_table vtab,csS_table ttab,csA_dec foo)
 					} else {
 						csS_insert(vtab, name, csE_varentry(type,access,name));
 					}
+					regnum++;
 				}
 			}
 			c_quadlist_();
-			c_quad_(c_address_(),c_address_(),c_addresslable_(lable),csC_lable);
+			c_quad_(c_address_(),c_address_(),c_addressenv_(e),csC_func);
 			csA_locdeclist list = csA_decfunloclist(foo);
-			if (list)
-				c_locdeclist(vtab,ttab,list);
+			int ttt = 0;
+			if (list) {
+				csC_info i = c_locdeclist(vtab,ttab,list);
+				ttt = i.u.intconst;
+			}
+			frame->framesize = ttt + regnum;
 			csA_stmtlist stmt = csA_decfunstmtlist(foo);
 			if (stmt)
 				c_stmtlist_(vtab,ttab,stmt,NULL);
@@ -258,6 +264,7 @@ static csC_info c_locdeclist(csS_table vtab,csS_table ttab,csA_locdeclist list)
 	csC_info inf = c_info_();
 	VERIFY(list);
 	csA_locdec pos = NULL;
+	int varcount = 0;
 	list_for_each_entry(pos, list, next) {
 		csS_symbol tyname = csA_locdectype(pos);
 		csS_symbol name = csA_locdecname(pos);
@@ -285,7 +292,10 @@ static csC_info c_locdeclist(csS_table vtab,csS_table ttab,csA_locdeclist list)
 			c_quad_(arg1,arg2,res,csC_assign);
 		}
 		csS_insert(vtab, name, csE_varentry(ty,access,name));
+		varcount++;
 	}
+	inf.kind = c_intconst_;
+	inf.u.intconst = varcount;
 	return inf;
 }
 
