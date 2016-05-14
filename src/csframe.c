@@ -5,8 +5,10 @@
 csF_frame csF_newframe(csT_label name)
 {
 	VERIFY(name);
+	static int offset = 1;
 	csF_frame foo =  csU_malloc(sizeof(*foo));
 	foo->name = name;
+	foo->offset = offset++;
 	return foo;
 }
 
@@ -22,17 +24,17 @@ csF_access csF_alloclocal(csF_frame frame)
 csF_access csF_allocglobal(csT_type type)
 {
 	VERIFY(type);
-	static int offset = 0;
+	static int offset = 1;
 	csF_access foo = csU_malloc(sizeof(*foo));
 	switch (type->kind) {
 	case csT_int:
-		foo->kind = f_intstatic;
+		foo->kind = f_static;
 		break;
 	case csT_string:
-		foo->kind = f_strstatic;
+		foo->kind = f_static;
 		break;
 	case csT_bool:
-		foo->kind = f_boolstatic;
+		foo->kind = f_static;
 		break;
 	default:
 		VERIFY(0);

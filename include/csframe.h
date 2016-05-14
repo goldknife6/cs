@@ -11,15 +11,15 @@ typedef struct f_access_ *csF_access;
 typedef struct f_frame_ *csF_frame;
 
 struct f_access_ {
-	enum { f_frame , f_reg ,f_intstatic,f_strstatic,f_boolstatic} kind;
+	enum { f_frame , f_reg ,f_static} kind;
 	union{
 		int offset;
 		csT_temp reg ;
 	} u ;
 };
 
-
 struct f_frame_ {
+	int offset;
 	csT_label name; 
 	int framesize;
 };

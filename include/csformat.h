@@ -20,7 +20,6 @@ typedef struct {
 	csG_int32 f_offset_;
 } csF_format;
 
-
 extern csF_format csF_static(csF_fmtvalkind kind,int size,int offset);
 extern csF_format csF_const(csF_fmtvalkind kind,int size,int offset);
 extern csF_format csF_proc(int size,int offset);
