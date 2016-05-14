@@ -34,7 +34,7 @@ csO_code csO_iABC(csO_opcode op,csG_byte a,csG_byte b,csG_byte c)
 	cc.u.abc.b[2] = b;
 	cc.u.abc.b[3] = c;
 	cc.kind = iABC;
-	//printf("%s %d %d %d\n", csO_opnames[op],a,b,c);
+	printf("%s %d %d %d\n", csO_opnames[op],a,b,c);
 	return cc;
 }
 
@@ -87,7 +87,7 @@ void csO_printcode(csO_code cc)
 		printf("%s %d %d\n", csO_opnames[csO_iop(cc)],csO_iA(cc),csO_iBx(cc));
 		break;
 	case iABC:
-		printf("%s %d %d %d\n", csO_opnames[csO_iop(cc)],csO_iA(cc),csO_iB(cc),csO_iC(cc));
+	printf("%s %d %d %d\n", csO_opnames[csO_iop(cc)],csO_iA(cc),csO_iB(cc),csO_iC(cc));
 		break;
 	default:
 		VERIFY(0);

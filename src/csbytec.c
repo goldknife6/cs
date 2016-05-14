@@ -16,6 +16,11 @@ static csL_list b_regin_head_ = LIST_HEAD_INIT(b_regin_head_);
 static void b_regin_static_bool_(csG_bool val,int offset);
 static void b_regin_static_int_(int val,int offset);
 static void b_regin_static_str_(csG_string val,int offset);
+static void b_regin_const_bool_(csG_bool val,int offset);
+static void b_regin_const_int_(int val,int offset);
+static void b_regin_const_str_(csG_string val,int offset);
+
+
 static void b_regin_proc_(csL_list *head,int size,int offset);
 static int b_genproc_(csC_quadlist body,csL_list *head);
 static csB_codelist b_addcodelist(csO_code code,csL_list *head);
@@ -38,7 +43,7 @@ void csB_genbytecode()
 	if (csG_error || list_empty(&fraglist) )
 		return;
 
-	csC_printcode();
+	//csC_printcode();
 	b_regin_();
 	b_bytecode_(outs);
 }
@@ -59,7 +64,7 @@ static void b_regin_()
 			VERIFY(body);
 			VERIFY(frame);
 			int count = b_genproc_(body,prochead);
-			b_regin_proc_(prochead,count,frame->offset);
+			b_regin_proc_(prochead,count*4,frame->offset);
 			break;
 		}
 		case csC_strfrag: {
@@ -87,6 +92,7 @@ static void b_regin_()
 			VERIFY(0);
 		}
 	}
+
 }
 
 static void b_bytecode_(FILE *outs)
@@ -94,6 +100,27 @@ static void b_bytecode_(FILE *outs)
 	VERIFY(outs);
 	csB_regin o_pos_ = NULL;
 	csF_format format;
+	int staticsize = 0;
+	int constsize = 0;
+	int procsize = 0;
+	list_for_each_entry(o_pos_, &b_regin_head_, next) {
+		switch (o_pos_->kind) {
+		case f_static_:
+			staticsize++;
+			break;
+		case f_prco_:
+			procsize++;
+			break;
+		case f_const_:
+			constsize++;
+			break;
+		default:
+			VERIFY(0);
+		}
+	}
+	csF_fmtheader header = csF_header(staticsize,constsize,procsize);
+	fwrite(&header, sizeof(header), 1, outs);
+
 	list_for_each_entry(o_pos_, &b_regin_head_, next) {
 		switch (o_pos_->kind) {
 		case f_static_:{
@@ -122,10 +149,8 @@ static void b_bytecode_(FILE *outs)
 			csO_code code;
 			list_for_each_entry(p_code_, o_pos_->u.head, next) {
 				code = p_code_->code;
-				csO_printcode(code);
-				fwrite(&code, sizeof(code), 1, outs);
+				fwrite(&code.u, sizeof(int), 1, outs);
 			}
-	
 			break;
 		}
 		case f_const_:{
@@ -201,6 +226,7 @@ static int b_genproc_(csC_quadlist body,csL_list *head)
 			break;
 		}
 		case csC_not:
+			VERIFY(0);
 			break;
 		case csC_iffalse:{
 			csT_label lab = p_pos_->res.u.lab;
@@ -240,6 +266,7 @@ static int b_genproc_(csC_quadlist body,csL_list *head)
 		case csC_sub:
 		case csC_or:
 		case csC_and:
+			p_count_--;
 			break;
 		case csC_return:{
 			csO_code code = csO_iABC(OP_RETURN,0,0,0);
@@ -252,6 +279,7 @@ static int b_genproc_(csC_quadlist body,csL_list *head)
 		case csC_lq:
 		case csC_gt:
 		case csC_gq:
+			VERIFY(0);
 			break;
 		default:
 			VERIFY(0);
@@ -261,8 +289,6 @@ static int b_genproc_(csC_quadlist body,csL_list *head)
 	}
 
 	b_backpatch_(labtab,&labhead);
-
-
 
 	return p_count_;
 }
@@ -393,6 +419,7 @@ static csG_2byte b_constregin_int_(int num)
 	csG_2byte off = (csG_2byte)(long)csH_tablook(b_inttab_, (void*)(long)num);
 	if (!off) {
 		csH_tabinsert(b_inttab_, (void*)(long)num, (void*)(long)b_const_offset_);
+		b_regin_const_int_(num,b_const_offset_);
 		return b_const_offset_++;
 	}
 	return off;
@@ -425,6 +452,19 @@ static void b_regin_static_int_(int val,int offset)
 	list_add_tail(&foo->next, &b_regin_head_);
 }
 
+static void b_regin_const_int_(int val,int offset)
+{
+	VERIFY(offset);
+	csB_regin foo = csU_malloc(sizeof(*foo));
+	foo->kind = f_const_;
+	foo->u.val.kind = f_int_;
+	foo->u.val.u.intv = val;
+	foo->offset = offset;
+	foo->size = sizeof(int);
+	INIT_LIST_HEAD(&foo->next);
+	list_add_tail(&foo->next, &b_regin_head_);
+}
+
 static void b_regin_static_bool_(csG_bool val,int offset)
 {
 	VERIFY(offset);
@@ -438,11 +478,37 @@ static void b_regin_static_bool_(csG_bool val,int offset)
 	list_add_tail(&foo->next, &b_regin_head_);
 }
 
+static void b_regin_const_bool_(csG_bool val,int offset)
+{
+	VERIFY(offset);
+	csB_regin foo = csU_malloc(sizeof(*foo));
+	foo->kind = f_const_;
+	foo->u.val.kind = f_bool_;
+	foo->u.val.u.boolv = val;
+	foo->offset = offset;
+	foo->size = sizeof(csG_bool);
+	INIT_LIST_HEAD(&foo->next);
+	list_add_tail(&foo->next, &b_regin_head_);
+}
+
 static void b_regin_static_str_(csG_string val,int offset)
 {
 	VERIFY(offset);
 	csB_regin foo = csU_malloc(sizeof(*foo));
 	foo->kind = f_static_;
+	foo->u.val.kind = f_str_;
+	foo->u.val.u.strv = val;
+	foo->offset = offset;
+	foo->size = strlen(val);
+	INIT_LIST_HEAD(&foo->next);
+	list_add_tail(&foo->next, &b_regin_head_);
+}
+
+static void b_regin_const_str_(csG_string val,int offset)
+{
+	VERIFY(offset);
+	csB_regin foo = csU_malloc(sizeof(*foo));
+	foo->kind = f_const_;
 	foo->u.val.kind = f_str_;
 	foo->u.val.u.strv = val;
 	foo->offset = offset;

@@ -1,9 +1,7 @@
 #include "csutil.h"
-#include "stdlib.h"
-#include <string.h>
+#include "string.h"
 #include <stdarg.h>
-#include <stdio.h>
-
+#include <stdlib.h>
 void csU_emsg(char *message,...)
 {
 	va_list ap;

@@ -29,3 +29,12 @@ csF_format csF_proc(int size,int offset)
 	foo.f_offset_ = offset;
 	return foo;
 }
+
+csF_fmtheader csF_header(int staticsize,int constsize,int procsize)
+{
+	csF_fmtheader header;
+	header.staticsize = staticsize;
+	header.constsize = constsize;
+	header.procsize = procsize;
+	return header;
+}
