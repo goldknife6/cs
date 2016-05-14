@@ -20,11 +20,22 @@ TESTFILE	= hash.o lex.o sym.o parser.o code.o
 TESTOBJFILES= $(patsubst %.o,$(OBJDIR)/%.o,$(TESTFILE))
 TESTDEPS 	= $(patsubst %.o,%.d,$(TESTOBJFILES))
 
-.PHONY : all
-all:$(DEPS) $(TARGET) 
+VMSRC		= vm
+VMFILES		= csvm.o csmemory.o
+VMOBJFILES 	= $(patsubst %.o,$(OBJDIR)/%.o,$(VMFILES))
+VMDEPS 		= $(patsubst %.o,%.d,$(VMOBJFILES))
+VMTARGET 	= csvm
 
-#依赖文件
+.PHONY : all
+all:$(DEPS) $(TARGET) $(VMTARGET) 
+
+#依赖文件 for compiler
 $(DEPS):$(OBJDIR)/%.d:$(SRC)/%.c
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) -MT $(patsubst %.d,%.o,$@)  -MM $< > $@
+
+#依赖文件 for vm
+$(VMDEPS):$(OBJDIR)/%.d:$(VMSRC)/%.c
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -MT $(patsubst %.d,%.o,$@)  -MM $< > $@
 
@@ -34,9 +45,13 @@ $(TESTDEPS):$(OBJDIR)/%.d:$(TESTDIR)/%.c
 
 
 -include $(DEPS)
+-include $(VMDEPS)
 -include $(TESTDEPS)
 
 $(TARGET):$(OBJFILES) $(TESTOBJFILES) $(OBJDIR)/main.o
+	$(CC) $(CFLAGS) -o $@ $^ 
+
+$(VMTARGET):$(VMOBJFILES)
 	$(CC) $(CFLAGS) -o $@ $^ 
 
 $(OBJDIR)/main.o:main.c $(INCLUDE)/csglobal.h $(INCLUDE)/cslex.h $(INCLUDE)/csparser.h
@@ -46,9 +61,17 @@ $(OBJDIR)/%.o:$(SRC)/%.c
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c $< -o $@
 
+$(OBJDIR)/%.o:$(VMSRC)/%.c
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) -c $< -o $@
+
 $(OBJDIR)/%.o:$(TESTDIR)/%.c
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c $< -o $@
+
+
+
+
 
 .PHONY : clean
 clean:

@@ -19,6 +19,7 @@ csF_format csF_const(csF_fmtvalkind kind,int size,int offset)
 	foo.f_offset_ = offset;
 	return foo;
 }
+
 csF_format csF_proc(int size,int offset)
 {
 	csF_format foo;

@@ -27,6 +27,7 @@ static csG_2byte b_constregin_bool_(csG_bool boo);
 static csG_2byte b_constregin_str_(csG_string str);
 static void b_backpatch_(csH_table labtab,csL_list *head);
 
+extern void csC_printcode();
 void csB_genbytecode()
 {
 	csA_declist list = parser();

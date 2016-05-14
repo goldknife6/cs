@@ -52,3 +52,4 @@ void emitError(char *message,...)
 	fprintf(stderr,"\n");
 	exit(1);
 }
+
