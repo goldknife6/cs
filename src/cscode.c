@@ -214,7 +214,6 @@ static csC_info c_dec_(csS_table vtab,csS_table ttab,csA_dec foo)
 		csT_typelist list = c_mktypelist_(ttab,plist);
 		csF_frame frame = csF_newframe(name);
 		curframe = frame;
-		//csT_label lable = csT_namedlabel(csS_name(name));
 		e = csE_funentry(list,ty,name,frame);
 		csS_insert(vtab, name, e);
 		{
@@ -730,40 +729,29 @@ static csC_info c_immutable_(csS_table vtab,csS_table ttab,csA_immutable foo)
     	VERIFY(e->kind == csE_fun);
     	int count = 0;
     	csT_type resty = e->u.fun.res;
-    	if (e->u.fun.bulitin) {
-    		csA_expr pos = NULL;
-    		list_for_each_entry(pos,arglist,next) {
-	    		inf = c_expr_(vtab,ttab,pos);
+    	csT_typelist formals = e->u.fun.formals;
+    	t_typelistentry_ pos1 = NULL;
+    	csA_expr pos2 = NULL;
+    	if (arglist) {
+    		VERIFY(formals);
+	    	list_for_each_entry_2(pos1,pos2, &formals->head,arglist, next,next) {
+	    		count++;
+	    		csT_type ty = pos1->type;
+	    		inf = c_expr_(vtab,ttab,pos2);
 				csC_address res = c_infotoaddr(inf);
 				c_quad_(c_address_(),c_address_(),res,csC_param);
 				VERIFY(inf.ty);
-				count++;
+				if (inf.ty != ty) {
+					c_emsg_(csA_immutpos(foo),"%dth argument type is wrong at function %s",count,csS_name(funname));
+				}
 	    	}
+	    	if (list_is_last(&pos2->next,arglist) != list_is_last(&pos1->next,&formals->head)) {
+    			c_emsg_(csA_immutpos(foo),"wrong number of arguments at function %s",csS_name(funname));
+    		}
     	} else {
-	    	csT_typelist formals = e->u.fun.formals;
-	    	t_typelistentry_ pos1 = NULL;
-	    	csA_expr pos2 = NULL;
-	    	if (arglist) {
-	    		VERIFY(formals);
-		    	list_for_each_entry_2(pos1,pos2, &formals->head,arglist, next,next) {
-		    		count++;
-		    		csT_type ty = pos1->type;
-		    		inf = c_expr_(vtab,ttab,pos2);
-					csC_address res = c_infotoaddr(inf);
-					c_quad_(c_address_(),c_address_(),res,csC_param);
-					VERIFY(inf.ty);
-					if (inf.ty != ty) {
-						c_emsg_(csA_immutpos(foo),"%dth argument type is wrong at function %s",count,csS_name(funname));
-					}
-		    	}
-		    	if (list_is_last(&pos2->next,arglist) != list_is_last(&pos1->next,&formals->head)) {
-	    			c_emsg_(csA_immutpos(foo),"wrong number of arguments at function %s",csS_name(funname));
-	    		}
-	    	} else {
-	    		VERIFY(formals);
-	    		if (formals->count != 0)
-	    			c_emsg_(csA_immutpos(foo),"wrong number of arguments at function %s",csS_name(funname));
-	    	}
+    		VERIFY(formals);
+    		if (formals->count != 0)
+    			c_emsg_(csA_immutpos(foo),"wrong number of arguments at function %s",csS_name(funname));
     	}
     	arg1 = c_addressenv_(e);
     	arg2 = c_addressint_(count);
