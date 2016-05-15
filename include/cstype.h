@@ -46,7 +46,6 @@ struct t_typelist_ {
 };
 extern csT_typelist csT_mktypelist();
 extern void csT_typelistadd(csT_typelist head,csT_type type);
-//extern csG_bool CStypeEqual(csT_type foo,csT_type bar);
 extern csT_type csT_typeint(void);
 extern csT_type csT_typebool(void);
 extern csT_type csT_typestring(void);

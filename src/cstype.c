@@ -15,6 +15,7 @@ void csT_typelistadd(csT_typelist head,csT_type type)
 	INIT_LIST_HEAD(&foo->next);
 	foo->type = type;
 	list_add_tail(&foo->next, &head->head);
+	head->count++;
 }
 
 csG_bool CStypeEqual(csT_type foo,csT_type bar)

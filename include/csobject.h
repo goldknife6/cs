@@ -28,4 +28,5 @@ typedef struct csO_object {
 extern csO_object csO_int_object(int val);
 extern csO_object csO_bool_object(csG_bool val);
 extern csO_object csO_string_object(char * val,size_t size);
+extern void csO_pobject(csO_object obj);
 #endif/*!CS_OBJECT_H*/

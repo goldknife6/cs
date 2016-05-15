@@ -287,10 +287,32 @@ static int b_genproc_(csC_quadlist body,csL_list *head)
 			b_addcodelist(code,head);
 			break;
 		}
-		case csC_eq:
+		case csC_eq:{
+			csG_byte arg1loc = o_getreg_(regtab,p_pos_->arg1,&p_count_,&p_startreg_,head);
+			csG_byte arg2loc =  o_getreg_(regtab,p_pos_->arg2,&p_count_,&p_startreg_,head);
+			csG_byte resloc = o_getreg_(regtab,p_pos_->res,&p_count_,&p_startreg_,head);
+			csO_code code = csO_iABC(OP_EQ,resloc,arg1loc,arg2loc);
+			b_addcodelist(code,head);
+			break;
+		}
 		case csC_neq:
-		case csC_lt:
-		case csC_lq:
+			VERIFY(0);
+		case csC_lt:{
+			csG_byte arg1loc = o_getreg_(regtab,p_pos_->arg1,&p_count_,&p_startreg_,head);
+			csG_byte arg2loc =  o_getreg_(regtab,p_pos_->arg2,&p_count_,&p_startreg_,head);
+			csG_byte resloc = o_getreg_(regtab,p_pos_->res,&p_count_,&p_startreg_,head);
+			csO_code code = csO_iABC(OP_LT,resloc,arg1loc,arg2loc);
+			b_addcodelist(code,head);
+			break;
+		}
+		case csC_lq:{
+			csG_byte arg1loc = o_getreg_(regtab,p_pos_->arg1,&p_count_,&p_startreg_,head);
+			csG_byte arg2loc =  o_getreg_(regtab,p_pos_->arg2,&p_count_,&p_startreg_,head);
+			csG_byte resloc = o_getreg_(regtab,p_pos_->res,&p_count_,&p_startreg_,head);
+			csO_code code = csO_iABC(OP_LE,resloc,arg1loc,arg2loc);
+			b_addcodelist(code,head);
+			break;
+		}
 		case csC_gt:
 		case csC_gq:
 			VERIFY(0);
@@ -325,7 +347,6 @@ static csG_byte o_getreg_(csH_table regtab,csC_address addr,int *offset,int *sta
 	case csC_env: {
 		csE_enventry e = addr.u.eval;
 		VERIFY(e);
-		//VERIFY(e->kind == csE_var);
 		if (e->kind == csE_var) {
 			csF_access access = e->u.var.access;
 			VERIFY(access);
@@ -333,12 +354,16 @@ static csG_byte o_getreg_(csH_table regtab,csC_address addr,int *offset,int *sta
 				VERIFY(access->u.reg);
 				foo = access->u.reg->num;
 			} else if (access->kind == f_static) {
-				foo = access->u.offset;
+				foo = (*statrreg)++;
+				csO_code code = csO_iABx(OP_LOADSTATIC,foo,access->u.offset);
+				b_addcodelist(code,head);
+				(*offset)++;
 			} else {
 				VERIFY(0);
 			}
 		} else {
-			foo = 100;
+			VERIFY(e->u.fun.frame);
+			foo = e->u.fun.frame->offset;
 		}
 		break;
 	}
@@ -439,6 +464,7 @@ static csG_2byte b_constregin_int_(int num)
 	if (!off) {
 		csH_tabinsert(b_inttab_, (void*)(long)num, (void*)(long)b_const_offset_);
 		b_regin_const_int_(num,b_const_offset_);
+
 		return b_const_offset_++;
 	}
 	return off;

@@ -20,6 +20,7 @@ static char *csO_opnames[NUM_OPCODES+1] = {
 	"RETURN",
 	"IF",
 	"PARAM",
+	"LOADSTATIC",
 	NULL	
 };
 
@@ -84,16 +85,6 @@ csG_byte csO_iC(csO_code cc)
 }
 void csO_printcode(csO_code cc)
 {
-	//switch (cc.kind) {
-	//case iAsBx:
-	//case iABx:
-		printf("%s %d %d  ", csO_opnames[csO_iop(cc)],csO_iA(cc),csO_iBx(cc));
-	//	break;
-	//case iABC:
-		printf("%d %d %d\n", csO_iA(cc),csO_iB(cc),csO_iC(cc));
-	//	break;
-	//default:
-	//	VERIFY(0);
-	//}
-	
+	printf("%10s %3d %3d  ", csO_opnames[csO_iop(cc)],csO_iA(cc),csO_iBx(cc));
+	printf("%3d %3d %3d\n", csO_iA(cc),csO_iB(cc),csO_iC(cc));
 }

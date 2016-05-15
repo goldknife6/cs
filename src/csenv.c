@@ -9,10 +9,14 @@ static void e_free_(void *key,void *val)
 
 static csE_enventry e_printf_(csS_symbol name)
 {
-	csT_typelist formals = csT_mktypelist();
-
-	//csE_enventry foo = csE_funentry(formals,csT_typevoid(),name,csF_frame frame);
-	return NULL;
+	csE_enventry foo = csU_malloc(sizeof(*foo));
+	foo->kind = csE_fun;
+	foo->u.fun.bulitin = TRUE;
+	foo->u.fun.res = csT_typevoid();
+	foo->u.fun.formals = NULL;
+	foo->name = name;
+	foo->u.fun.frame = csF_newframe(name);
+	return foo;
 }
 
 csS_table csE_baseval(void)

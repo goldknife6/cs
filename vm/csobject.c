@@ -35,6 +35,7 @@ csO_object csO_bool_object(csG_bool val)
 	o_initheader_(&foo->header);
 	foo->kind = csO_bool;
 	foo->u.bval = val;
+	
 	return foo;
 }
 
@@ -45,6 +46,24 @@ csO_object csO_string_object(char * val,size_t size)
 	foo->kind = csO_str;
 	foo->u.sval = o_ostring_(val,size);
 	return foo;
+}
+
+void csO_pobject(csO_object obj)
+{
+	VERIFY(obj);
+	switch (obj->kind) {
+	case csO_int:
+		printf("%d", obj->u.ival);
+		break;
+	case csO_bool:
+		printf("%s", obj->u.bval ? "true":"false");
+		break;
+	case csO_str:
+		printf("%s", obj->u.sval->s);
+		break;
+	default:
+		VERIFY(0);
+	}
 }
 
 

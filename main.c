@@ -18,7 +18,7 @@ void csB_genbytecode();
 csG_bool csG_error = FALSE;
 int main(int argc, char *argv[])
 {
-	outs = fopen("123","a");
+	outs = fopen("123","w");
 
 	ins = stdout;
 	errors = stdout;

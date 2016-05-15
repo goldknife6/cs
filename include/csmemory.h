@@ -22,8 +22,20 @@ typedef struct csM_procregin {
 } csM_procregin;
 
 
+typedef struct m_stackinf_ {
+	int ret;
+} m_stackinf_;
+
+typedef struct csM_stackinf {
+	size_t size;
+  	m_stackinf_ *inf;
+} csM_stackinf;
+
+
 extern csM_regin csM_static_regin;
 extern csM_regin csM_const_regin;
 extern csM_procregin csM_proc_regin;
+extern csM_regin csM_stack_regin;
+extern csM_stackinf csM_stack_inf;
 extern void csM_load_bytecode(FILE *in);
 #endif/*!CS_MEMORY_H*/
