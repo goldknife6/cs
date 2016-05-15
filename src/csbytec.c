@@ -149,7 +149,8 @@ static void b_bytecode_(FILE *outs)
 			csO_code code;
 			list_for_each_entry(p_code_, o_pos_->u.head, next) {
 				code = p_code_->code;
-				fwrite(&code.u, sizeof(int), 1, outs);
+				csO_printcode(code);
+				fwrite(&code.u, sizeof(code), 1, outs);
 			}
 			break;
 		}
@@ -318,7 +319,7 @@ static csG_byte o_getreg_(csH_table regtab,csC_address addr,int *offset,int *sta
 			VERIFY(access->u.reg);
 			foo = access->u.reg->num;
 		} else if (access->kind == f_static) {
-			VERIFY(0);
+			foo = access->u.offset;
 		} else {
 			VERIFY(0);
 		}
@@ -362,7 +363,7 @@ static void b_backpatch_(csH_table labtab,csL_list *head)
 		csO_code code = ll->code->code;
 		csT_label lab = ll->lab;
 		long l = (long)csH_tablook(labtab, lab);
-		VERIFY(l);
+		//VERIFY(l);
 		switch (csO_iop(code)) {
 		case OP_JMP:
 			ll->code->code = csO_iAsBx(OP_JMP,0,l-ll->offset-1);
@@ -406,6 +407,7 @@ static csG_2byte b_constregin_str_(csG_string str)
 	csG_2byte off = (csG_2byte)(long)csH_tablook(b_strtab_, str);
 	if (!off) {
 		csH_tabinsert(b_strtab_, str, (void*)(long)b_const_offset_);
+		b_regin_static_str_(str,b_const_offset_);
 		return b_const_offset_++;
 	}
 	return off;
@@ -433,6 +435,7 @@ static csG_2byte b_constregin_bool_(csG_bool boo)
 	csG_2byte off = (csG_2byte)(long)csH_tablook(b_booltab_, (void*)(long)boo);
 	if (!off) {
 		csH_tabinsert(b_booltab_, (void*)(long)boo, (void*)(long)b_const_offset_);
+		b_regin_const_bool_(boo,b_const_offset_);
 		return b_const_offset_++;
 	}
 	return off;

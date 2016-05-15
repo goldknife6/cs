@@ -52,7 +52,7 @@ $(TARGET):$(OBJFILES) $(TESTOBJFILES) $(OBJDIR)/main.o
 	$(CC) $(CFLAGS) -o $@ $^ 
 
 $(VMTARGET):$(VMOBJFILES)
-	$(CC) $(CFLAGS) -o $@ $^ 
+	$(CC) $(CFLAGS) -o  $@ obj/csopcodes.o $^ 
 
 $(OBJDIR)/main.o:main.c $(INCLUDE)/csglobal.h $(INCLUDE)/cslex.h $(INCLUDE)/csparser.h
 	$(CC) $(CFLAGS) -c $< -o $@ 

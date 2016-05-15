@@ -33,8 +33,8 @@ csO_code csO_iABC(csO_opcode op,csG_byte a,csG_byte b,csG_byte c)
 	cc.u.abc.b[1] = a;
 	cc.u.abc.b[2] = b;
 	cc.u.abc.b[3] = c;
-	cc.kind = iABC;
-	printf("%s %d %d %d\n", csO_opnames[op],a,b,c);
+	//cc.kind = iABC;
+	//printf("%s %d %d %d\n", csO_opnames[op],a,b,c);
 	return cc;
 }
 
@@ -44,7 +44,8 @@ csO_code csO_iABx(csO_opcode op,csG_byte a,csG_2byte bx)
 	cc.u.abx.b[0] = op;
 	cc.u.abx.b[1] = a;
 	cc.u.abx.bx = bx;
-	cc.kind = iABx;
+	//cc.kind = iABx;
+	//printf("%s %d %d\n", csO_opnames[op],a,bx);
 	return cc;
 }
 
@@ -54,13 +55,14 @@ csO_code csO_iAsBx(csO_opcode op,csG_byte a,csG_2byte bx)
 	cc.u.abx.b[0] = op;
 	cc.u.abx.b[1] = a;
 	cc.u.abx.bx = bx;
-	cc.kind = iAsBx;
+	//cc.kind = iAsBx;
+	//printf("%s %d %d\n", csO_opnames[op],a,bx);
 	return cc;
 }
 csO_opcode csO_iop(csO_code cc)
 {
-	if (cc.kind == iABC)
-		return cc.u.abc.b[0];
+	//if (cc.kind == iABC)
+	//	return cc.u.abc.b[0];
 	return cc.u.abx.b[0];
 }
 csG_byte csO_iA(csO_code cc)
@@ -81,15 +83,16 @@ csG_byte csO_iC(csO_code cc)
 }
 void csO_printcode(csO_code cc)
 {
-	switch (cc.kind) {
-	case iAsBx:
-	case iABx:
+	//switch (cc.kind) {
+	//case iAsBx:
+	//case iABx:
 		printf("%s %d %d\n", csO_opnames[csO_iop(cc)],csO_iA(cc),csO_iBx(cc));
-		break;
-	case iABC:
-	printf("%s %d %d %d\n", csO_opnames[csO_iop(cc)],csO_iA(cc),csO_iB(cc),csO_iC(cc));
-		break;
-	default:
-		VERIFY(0);
-	}
+	//	break;
+	//case iABC:
+	//printf("%s %d %d %d\n", csO_opnames[csO_iop(cc)],csO_iA(cc),csO_iB(cc),csO_iC(cc));
+	//	break;
+	//default:
+	//	VERIFY(0);
+	//}
+	
 }

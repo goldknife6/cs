@@ -12,10 +12,10 @@ csM_regin csM_static_regin;
 csM_regin csM_const_regin;
 csM_procregin csM_proc_regin;
 
-static csM_proc m_proc_(size_t size,csG_int32 *code)
+static csM_proc m_proc_(size_t size,csO_code *code)
 {
 	VERIFY(code);
-	csM_proc foo = malloc(sizeof(csM_proc));
+	csM_proc foo = malloc(sizeof(*foo));
 	foo->size = size;
 	foo->code = code;
 	return foo;
@@ -78,9 +78,10 @@ void csM_load_bytecode(FILE *in)
 			break;
 		}
 		case f_prco_:{
-			csG_int32 *code = malloc(fmt.f_size_);
+			csO_code *code = malloc(fmt.f_size_);
 			csM_proc proc = m_proc_(fmt.f_size_,code);
 			fread(code, fmt.f_size_, 1, in);
+			csM_proc_regin.code[offset-1] = proc;
 			break;
 		}
 		case f_const_:{

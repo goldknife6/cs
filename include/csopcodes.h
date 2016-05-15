@@ -24,7 +24,7 @@ typedef enum csO_opmode {
 typedef char csG_byte;
 typedef short csG_2byte;
 typedef struct {
-	csO_opmode kind;
+	//csO_opmode kind;
 	union {
 		struct {
 			csG_byte b[4];

@@ -2,6 +2,7 @@
 #define CS_MEMORY_H
 #include "csglobal.h"
 #include "csobject.h"
+#include "csopcodes.h"
 
 
 
@@ -12,7 +13,7 @@ typedef struct csM_regin {
 
 typedef struct csM_proc {
 	size_t size;
-	csG_int32 *code;
+	csO_code *code;
 } *csM_proc;
 
 typedef struct csM_procregin {
