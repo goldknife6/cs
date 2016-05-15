@@ -21,6 +21,7 @@ void main(int argc, char *argv[])
 
 static csG_bool v_halt_;
 static int v_pc_ = 0;
+csO_object param; 
 static void v_exe_(csM_regin *cons,csM_regin *stat,csM_procregin *proc)
 {
 
@@ -53,6 +54,13 @@ static void v_exe_(csM_regin *cons,csM_regin *stat,csM_procregin *proc)
 		case OP_JMP:
 			v_pc_ += code.u.abx.bx;
 			break;
+		case OP_PARAM:
+			param = v_getobj_(code,cons,stat,proc);
+			break;
+		case OP_CALL:
+			VERIFY(param->kind == csO_str);
+			printf("%s\n", param->u.sval->s);
+			break;
 		default:
 			VERIFY(0);
 		}
@@ -75,6 +83,12 @@ static csO_object v_getobj_(csO_code code,csM_regin *cons,csM_regin *stat,csM_pr
 	case OP_JMP:
 		VERIFY(0);
 		break;
+	case OP_PARAM: {
+		csG_byte b = code.u.abc.b[1];
+		VERIFY(b <= stat->size);
+		return stat->obj[b-1];
+		break;
+	}
 	default:
 		VERIFY(0);
 	}

@@ -15,7 +15,7 @@
 typedef enum csO_opmode {
 	iABC, iABx, iAx,iAsBx
 }csO_opmode ;  /* basic instruction format */
-#define NUM_OPCODES 18
+#define NUM_OPCODES 19
 /*
 ** R(x) - register
 ** Cons(x) - constant (in constant regin)
@@ -49,7 +49,7 @@ typedef enum {
 	OP_NOT,			/*	A B C		R(A) := not R(B)			iABC			8*/
 
 	OP_CONCAT,		/*	A B C		R(A) := R(B) concat R(C)	iABC			9*/
-	OP_CALL,		/*	A B C		R(A)										10*/
+	OP_CALL,		/*	A B C		R(A) = call R(B),R(C)		iABC			10*/
 	OP_JMP,			/*	sBx			pc+=sBx						iAsBx			11*/
 	OP_EQ,			/*	A B C		if (R(B) == R(C))			then pc++		12*/
 	OP_LT,			/*	A B C		if (R(B) <  R(C)) 			then pc++		13*/
@@ -57,6 +57,7 @@ typedef enum {
 	OP_IFFALSE,     /*	A sBx		if(not A) pc+=sBx			iAsBx			15*/
 	OP_RETURN,      /*	A 										iABC			16*/
 	OP_IF,     		/*	A sBx		if(not A) pc+=sBx			iAsBx			17*/
+	OP_PARAM,     	/*	A 										iABC			18*/
 } csO_opcode;
 
 

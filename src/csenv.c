@@ -1,6 +1,8 @@
 #include "csenv.h"
 #include "csutil.h"
 
+static csE_enventry e_builtin_funentry_(csS_symbol name,csT_type res);
+
 static void e_free_(void *key,void *val)
 {
 
@@ -8,7 +10,11 @@ static void e_free_(void *key,void *val)
 
 csS_table csE_baseval(void)
 {
-	csS_table foo = csS_empty(e_free_);//CSsymEmpty(freeEnrty);
+	csS_table foo = csS_empty(e_free_);
+	csS_symbol name = csS_mksymbol("printf");
+	csT_type res = csT_typevoid();
+	csE_enventry e = e_builtin_funentry_(name,res);
+	csS_insert(foo,name,e);
 	return foo;
 }
 
@@ -19,8 +25,20 @@ csS_table csE_basetype(void)
 	csS_insert(foo,csS_mksymbol("bool"), csT_typebool());
 	csS_insert(foo,csS_mksymbol("string"), csT_typestring());
 	csS_insert(foo,csS_mksymbol("void"), csT_typevoid());
+
 	return foo;
 }
+
+static csE_enventry e_builtin_funentry_(csS_symbol name,csT_type res)
+{
+	csE_enventry foo = csU_malloc(sizeof(*foo));
+	foo->name = name;
+	foo->u.fun.bulitin = TRUE;
+	foo->u.fun.res = res;
+	foo->kind = csE_fun;
+	return foo;
+}
+
 
 csE_enventry csE_varentry(csT_type type,csF_access access,csS_symbol name)
 {

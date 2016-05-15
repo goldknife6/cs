@@ -259,8 +259,21 @@ static int b_genproc_(csC_quadlist body,csL_list *head)
 			b_addcodelist(code,head);
 			break;
 		}
-		case csC_call:
-		case csC_param:
+		case csC_call:{
+			csG_byte arg1loc = o_getreg_(regtab,p_pos_->arg1,&p_count_,&p_startreg_,head);
+			VERIFY(p_pos_->arg2.kind == csC_intconst);
+			csG_byte arg2loc =  p_pos_->arg2.u.ival;
+			csG_byte resloc = o_getreg_(regtab,p_pos_->res,&p_count_,&p_startreg_,head);
+			csO_code code = csO_iABC(OP_CALL,resloc,arg1loc,arg2loc);
+			b_addcodelist(code,head);
+			break;
+		}
+		case csC_param: {
+			csG_byte resloc = o_getreg_(regtab,p_pos_->res,&p_count_,&p_startreg_,head);
+			csO_code code = csO_iABC(OP_PARAM,resloc,0,0);
+			b_addcodelist(code,head);
+			break;
+		}
 		case csC_minus:
 		case csC_multiply:
 		case csC_divide:
@@ -312,16 +325,20 @@ static csG_byte o_getreg_(csH_table regtab,csC_address addr,int *offset,int *sta
 	case csC_env: {
 		csE_enventry e = addr.u.eval;
 		VERIFY(e);
-		VERIFY(e->kind == csE_var);
-		csF_access access = e->u.var.access;
-		VERIFY(access);
-		if (access->kind == f_reg) {
-			VERIFY(access->u.reg);
-			foo = access->u.reg->num;
-		} else if (access->kind == f_static) {
-			foo = access->u.offset;
+		//VERIFY(e->kind == csE_var);
+		if (e->kind == csE_var) {
+			csF_access access = e->u.var.access;
+			VERIFY(access);
+			if (access->kind == f_reg) {
+				VERIFY(access->u.reg);
+				foo = access->u.reg->num;
+			} else if (access->kind == f_static) {
+				foo = access->u.offset;
+			} else {
+				VERIFY(0);
+			}
 		} else {
-			VERIFY(0);
+			foo = 100;
 		}
 		break;
 	}
