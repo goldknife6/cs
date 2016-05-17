@@ -11,20 +11,16 @@ typedef struct f_access_ *csF_access;
 typedef struct f_frame_ *csF_frame;
 
 struct f_access_ {
-	enum { f_frame , f_reg ,f_static} kind;
-	union{
-		int offset;
-		csT_temp reg ;
-	} u ;
+	enum { f_frame , f_static} kind;
+	int offset;
 };
 
 struct f_frame_ {
 	int offset;
-	csT_label name; 
 	int framesize;
 };
 
-extern csF_frame csF_newframe(csT_label name); 
+extern csF_frame csF_newframe(); 
 extern csF_access csF_alloclocal(csF_frame frame);
-extern csF_access csF_allocglobal(csT_type type);
+extern csF_access csF_allocstatic();
 #endif/*!CS_FRAME_H*/

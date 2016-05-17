@@ -2,40 +2,20 @@
 #include "cslist.h"
 #include "csutil.h"
 
-
-
-struct t_templist_ {
-	csL_list head;
-};
-
-struct t_label_ {
+struct t_lable_ {
 	int num;
 };
 
-csT_temp csT_newtemp(void)
+csT_label csT_newlabel(void)
 {
-	static int count = 1;
-	csT_temp foo = csU_malloc(sizeof(*foo));
+	static int count;
+	csT_label foo = csU_malloc(sizeof(*foo));
 	foo->num = count++;
 	return foo;
 }
 
-csT_label csT_namedlabel(csG_string name)
+void csT_plabel(csT_label lab)
 {
-	VERIFY(name);
-	csS_symbol s = csS_mksymbol(name);
-	return s;
-}
-csT_label csT_newlabel(void)
-{
-	char buf[100];
-	static int count;
-	csT_temp foo = csU_malloc(sizeof(*foo));
-	sprintf(buf,"L%d",count++);
-	return csT_namedlabel(csU_strdup(buf));
-}
-void printTemp(csT_temp h)
-{
-	VERIFY(h);
-	fprintf(debugs, "T%d",h->num);
+	VERIFY(lab);
+	fprintf(debugs, "L%d", lab->num);
 }

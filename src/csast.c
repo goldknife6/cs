@@ -124,15 +124,15 @@ void csA_declistadd(csA_declist foo,csA_dec bar)
 	VERIFY(foo);VERIFY(bar);
 	list_add_tail(&bar->next, foo);
 }
-csA_simplelist csA_decvarlist(csA_dec foo)
+csA_const csA_decvarconst(csA_dec foo)
 {
 	VERIFY(foo);
-	return foo->u.vardec.list;
+	return foo->u.vardec.con;
 }
-void csA_setdecvarlist(csA_dec foo,csA_simplelist list)
+void csA_setdecvarconst(csA_dec foo,csA_const list)
 {
 	VERIFY(foo);VERIFY(list);
-	foo->u.vardec.list = list;
+	foo->u.vardec.con = list;
 }
 /**************************************************************/
 csA_param csA_mkparam()
@@ -708,5 +708,11 @@ csA_stmtlist csA_mkstmtlist()
 {
 	csA_stmtlist foo = csU_malloc(sizeof(*foo));
 	INIT_LIST_HEAD(foo);
+	return foo;
+}
+/**************************************************************/
+csA_const csA_mkconst()
+{
+	csA_const foo = csU_malloc(sizeof(*foo));
 	return foo;
 }

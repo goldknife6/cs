@@ -4,71 +4,57 @@
 /*
 * We assume that instructions are unsigned numbers.
 *  All instructions have an opcode in the first 8 bits.
-*  Instructions can have the following fields:
+*  Instructions can only have the following fields:
 *	`A' : 8 bits
-*	`B' : 8 bits
-*	`C' : 8 bits
-*	'Ax' : 24 bits ('A', 'B', and 'C' together)
-*	`Bx' : 16 bits (`B' and `C' together)
-*	`sBx' : signed Bx
+*	`B' : 16 bits
+*	`Bx' : signed 24 bits
 */
-typedef enum csO_opmode {
-	iABC, iABx, iAx,iAsBx
-}csO_opmode ;  /* basic instruction format */
-#define NUM_OPCODES 20
+#define NUM_OPCODES 27
 /*
 ** R(x) - register
 ** Cons(x) - constant (in constant regin)
 */
 
-typedef char csG_byte;
-typedef short csG_2byte;
+typedef char csO_byte;
+typedef short csO_2byte;
+typedef int csO_4byte;
+
 typedef struct {
-	//csO_opmode kind;
-	union {
-		struct {
-			csG_byte b[4];
-		} abc;
-		struct {
-			csG_byte b[2];
-			csG_2byte bx;
-		} abx;
-	} u;
+	csO_byte opkind;
+	csO_4byte d;
 } csO_code;
 
 typedef enum {
-	//name				args		description					format
-	OP_MOVE,		/*	A B			R(A) := R(B)				iABC			0*/
-	OP_LOADCONST,	/*	A Bx		R(A) := Cons(Bx)			iABx			1*/
-	OP_ADD,			/*	A B C		R(A) := R(B) + R(C)			iABC			2*/
-	OP_SUB,			/*	A B C		R(A) := R(B) - R(C)			iABC			3*/
-	OP_MUL,			/*	A B C		R(A) := R(B) * R(C)			iABC			4*/
-	OP_DIV,			/*	A B C		R(A) := R(B) / R(C)			iABC			5*/
-	OP_AND,			/*	A B C		R(A) := R(B) & R(C)			iABC			6*/
-	OP_OR,			/*	A B C		R(A) := R(B) | R(C)			iABC			7*/
-	OP_NOT,			/*	A B C		R(A) := not R(B)			iABC			8*/
-
-	OP_CONCAT,		/*	A B C		R(A) := R(B) concat R(C)	iABC			9*/
-	OP_CALL,		/*	A B C		R(A) = call R(B),R(C)		iABC			10*/
-	OP_JMP,			/*	sBx			pc+=sBx						iAsBx			11*/
-	OP_EQ,			/*	A B C		if (R(B) == R(C)) R(A)=true	iABC			12*/
-	OP_LT,			/*	A B C		if (R(B) <  R(C)) R(A)=true then pc++		13*/
-	OP_LE,			/*	A B C		if (R(B) <= R(C)) R(A)=true	then pc++		14*/
-	OP_IFFALSE,     /*	A sBx		if(not A) pc+=sBx			iAsBx			15*/
-	OP_RETURN,      /*	A 										iABC			16*/
-	OP_IF,     		/*	A sBx		if(not A) pc+=sBx			iAsBx			17*/
-	OP_PARAM,     	/*	A 										iABC			18*/
-	OP_LOADSTATIC,	/*	A Bx		R(A) := static(Bx)			iABx			19*/
+	//name							description					
+	OP_LOADC,/*						load constant						*/
+	OP_LOADS,/*						static variable						*/
+	OP_LOADL,/*						local variable						*/
+	OP_LOADA,/*					load static variable address		*/
+	OP_STORES,/*store top to address below top & pop both*/
+	OP_STOREL,/*store top to address below top & pop both*/
+	OP_MARK,/*mark stack*/
+	OP_ADD,
+	OP_SUB,
+	OP_MUL,
+	OP_DIV,
+	OP_EQ,
+	OP_NEQ,
+	OP_LT,
+	OP_LQ,
+	OP_GT,
+	OP_GQ,
+	OP_FJP,/*if false,ip += A*/
+	OP_TJP,/*if true,ip += A*/
+	OP_UJP,/*ip += A*/
+	OP_CUP,/*call user function*/
+	OP_CBP,/*call build in function*/
+	OP_RET,
+	OP_OR,
+	OP_AND,
+	OP_MINUS,
+	OP_NOT,
 } csO_opcode;
-
-
-extern csO_code csO_iABC(csO_opcode op,csG_byte a,csG_byte b,csG_byte c);
-extern csO_code csO_iABx(csO_opcode op,csG_byte a,csG_2byte bx);
-extern csO_code csO_iAsBx(csO_opcode op,csG_byte a,csG_2byte bx);
-extern csO_opcode csO_iop(csO_code op);
-extern csG_byte csO_iA(csO_code op);
-extern csG_byte csO_iB(csO_code op);
-extern csG_byte csO_iC(csO_code op);
-extern csG_2byte csO_iBx(csO_code cc);
-extern void csO_printcode(csO_code cc);
+extern void csO_printcode(csO_code code);
+extern csO_byte csO_codeop(csO_code code);
+extern csO_code csO_mkcode(csO_byte kind,csO_4byte i);
 #endif/*!CS_OPCODES_H*/

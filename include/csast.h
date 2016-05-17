@@ -29,6 +29,8 @@ typedef struct a_expr_ *csA_expr;
 typedef csL_list *csA_exprlist;
 typedef csL_list *csA_stmtlist;
 typedef struct a_stmt_ *csA_stmt;
+typedef struct a_const_ *csA_const;
+
 
 
 typedef enum {
@@ -49,7 +51,7 @@ struct a_dec_ {
 		struct {
 			csS_symbol type;
 			csS_symbol name;
-			csA_simplelist list;/*list may null*/
+			csA_const con;/*may null*/
 		} vardec;
 		struct {
 			csS_symbol name;
@@ -66,14 +68,14 @@ extern csA_dec csA_mkdec(void);
 extern csG_pos csA_decpos(csA_dec foo);
 extern csS_symbol csA_decvartype(csA_dec foo);
 extern csS_symbol csA_decvarname(csA_dec foo);
-extern csA_simplelist csA_decvarlist(csA_dec foo);
+extern csA_const csA_decvarconst(csA_dec foo);
 extern csS_symbol csA_decfunrestype(csA_dec foo);
 extern csS_symbol csA_decfunname(csA_dec foo);
 extern csA_paramlist csA_decfunparamlist(csA_dec foo);
 extern csA_locdeclist csA_decfunloclist(csA_dec foo);
 extern void csA_setdecvartype(csA_dec foo,csS_symbol type);
 extern void csA_setdecvarname(csA_dec foo,csS_symbol name);
-extern void csA_setdecvarlist(csA_dec foo,csA_simplelist list);
+extern void csA_setdecvarconst(csA_dec foo,csA_const list);
 extern void csA_setdecfunrestype(csA_dec foo,csS_symbol restype);
 extern void csA_setdecfunname(csA_dec foo,csS_symbol name);
 extern void csA_setdecfunparamlist(csA_dec foo,csA_paramlist list);
@@ -238,6 +240,22 @@ extern csG_pos csA_mutpos(csA_mutable foo);
 extern csA_mutable csA_mkmut();
 extern void csA_setmutid(csA_mutable foo,csS_symbol id);
 extern csS_symbol csA_mutid(csA_mutable foo);
+
+
+struct a_const_ {
+	csG_pos pos;
+	enum {
+		csA_cnum_,csA_cchar_,csA_cstr_,csA_cbool_
+	} kind;
+	union {
+		int val; 	// NUM CHAR true false
+		csG_string str;	// STRING
+	} u;
+};
+extern csA_const csA_mkconst();
+
+
+
 
 struct a_immutable_ {
 	csG_pos pos;

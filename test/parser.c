@@ -59,7 +59,7 @@ static void p_dec_(csA_dec dec)
 		s = csA_decvarname(dec);
 		VERIFY(s);
 		fprintf(debugs, "%s", csS_name(s));
-		list = csA_decvarlist(dec);
+		//list = csA_decvarlist(dec);
 		if (list) {
 			fprintf(debugs, " = ");
 			p_simplelist_(list);

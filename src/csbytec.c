@@ -5,11 +5,11 @@
 #include "csutil.h"
 #include "csbytec.h"
 
-static csG_2byte b_const_offset_ = 1;
+static csO_4byte b_const_offset_ = 1;
 
 
 
-static void b_regin_();
+static void b_regin_(csC_fraglist fraglist);
 static void b_bytecode_(FILE *outs);
 static csL_list b_regin_head_ = LIST_HEAD_INIT(b_regin_head_);
 
@@ -26,10 +26,9 @@ static int b_genproc_(csC_quadlist body,csL_list *head);
 static csB_codelist b_addcodelist(csO_code code,csL_list *head);
 static void b_addlablelist(csB_codelist code,csT_label lab,int offset,csL_list *head);
 
-static csG_byte o_getreg_(csH_table regtab,csC_address addr,int *offset,int *reg,csL_list *head);
-static csG_2byte b_constregin_int_(int num);
-static csG_2byte b_constregin_bool_(csG_bool boo);
-static csG_2byte b_constregin_str_(csG_string str);
+static csO_4byte b_constregin_int_(int num);
+static csO_4byte b_constregin_bool_(csG_bool boo);
+static csO_4byte b_constregin_str_(csG_string str);
 static void b_backpatch_(csH_table labtab,csL_list *head);
 
 extern void csC_printcode();
@@ -38,22 +37,20 @@ void csB_genbytecode()
 	csA_declist list = parser();
 	csS_table val = csE_baseval();
 	csS_table type = csE_basetype();
-	c_declist_(val,type,list);
+	csC_fraglist fraglist = c_declist_(val,type,list);
 
-	if (csG_error || list_empty(&fraglist) )
+	if (csG_error || !fraglist || list_empty(fraglist) )
 		return;
 
-	//csC_printcode();
-	b_regin_();
+	csC_printcode();
+	b_regin_(fraglist);
 	b_bytecode_(outs);
 }
 
-
-
-static void b_regin_()
+static void b_regin_(csC_fraglist fraglist)
 {
 	csC_frag o_pos_ = NULL;
-	list_for_each_entry(o_pos_, &fraglist, next) {
+	list_for_each_entry(o_pos_, fraglist, next) {
 		switch (o_pos_->kind) {
 		case csC_procfrag: {
 			csL_list* prochead = NULL;
@@ -68,31 +65,27 @@ static void b_regin_()
 			break;
 		}
 		case csC_strfrag: {
-			csF_access access = o_pos_->access;
-			VERIFY(access);
-			VERIFY(access->kind == f_static);
-			b_regin_static_str_(o_pos_->u.strv,access->u.offset);
+			int offset = o_pos_->offset;
+			VERIFY(offset);
+			b_regin_static_str_(o_pos_->u.strv,offset);
 			break;
 		}
 		case csC_intfrag:{
-			csF_access access = o_pos_->access;
-			VERIFY(access);
-			VERIFY(access->kind == f_static);
-			b_regin_static_int_(o_pos_->u.intv,access->u.offset);
+			int offset = o_pos_->offset;
+			VERIFY(offset);
+			b_regin_static_int_(o_pos_->u.intv,offset);
 			break;
 		}
 		case csC_boolfrag:{
-			csF_access access = o_pos_->access;
-			VERIFY(access);
-			VERIFY(access->kind == f_static);
-			b_regin_static_bool_(o_pos_->u.boolv,access->u.offset);
+			int offset = o_pos_->offset;
+			VERIFY(offset);
+			b_regin_static_bool_(o_pos_->u.boolv,offset);
 			break;
 		}
 		default:
 			VERIFY(0);
 		}
 	}
-
 }
 
 static void b_bytecode_(FILE *outs)
@@ -150,7 +143,7 @@ static void b_bytecode_(FILE *outs)
 			list_for_each_entry(p_code_, o_pos_->u.head, next) {
 				code = p_code_->code;
 				csO_printcode(code);
-				fwrite(&code.u, sizeof(code), 1, outs);
+				//fwrite(&code.u, sizeof(code), 1, outs);
 			}
 			break;
 		}
@@ -179,7 +172,6 @@ static void b_bytecode_(FILE *outs)
 	}
 }
 
-
 static int b_genproc_(csC_quadlist body,csL_list *head)
 {
 	int p_startreg_ = 0;
@@ -190,211 +182,134 @@ static int b_genproc_(csC_quadlist body,csL_list *head)
 	csH_table regtab = csH_tabempty(NULL,NULL,NULL);
 	csL_list labhead = LIST_HEAD_INIT(labhead);
 
+	csO_code code;
+	
 	list_for_each_entry(p_pos_, body, next) {
+		csC_address addr = p_pos_->arg;
 		switch (p_pos_->kind) {
-		case csC_func:{
-			VERIFY(p_pos_->res.kind == csC_env);
-			csE_enventry e = p_pos_->res.u.eval;
-			VERIFY(e);
-			csF_frame f = e->u.fun.frame;
-			VERIFY(f);
-			p_startreg_ = f->framesize + 1;
-			continue;
+		case csC_mark:
+			code = csO_mkcode(OP_MARK,0);
+			b_addcodelist(code,head);
+			break;
+		case csC_cup:
+			if (addr.kind == csC_env) {
+				csE_enventry eval = addr.u.eval;
+				VERIFY(eval);
+				VERIFY(eval->kind == csE_fun);
+				csF_frame f = eval->u.fun.frame;
+				VERIFY(f);
+				code = csO_mkcode(OP_CUP,f->offset);
+			} else VERIFY(0);
+			b_addcodelist(code,head);
+			break;
+		case csC_ret:
+			code = csO_mkcode(OP_RET,0);
+			b_addcodelist(code,head);
+			break;
+		case csC_load:
+			switch (addr.kind) {
+			case csC_intconst:
+				code = csO_mkcode(OP_LOADC,b_constregin_int_(addr.u.ival));
+				break;
+			case csC_strconst:
+				code = csO_mkcode(OP_LOADC,b_constregin_str_(addr.u.str));
+				break;
+			case csC_boolconst:
+				code = csO_mkcode(OP_LOADC,b_constregin_bool_(addr.u.bval));
+				break;
+			case csC_env: {
+				csE_enventry eval = addr.u.eval;
+				VERIFY(eval);
+				VERIFY(eval->kind == csE_var);
+				csF_access acc = eval->u.var.access;
+				VERIFY(acc);
+				if (acc->kind == f_frame){
+					code = csO_mkcode(OP_LOADL,acc->offset);
+				} else if (acc->kind == f_static) {
+					code = csO_mkcode(OP_LOADS,acc->offset);
+				} else VERIFY(0);
+				break;
+			}
+			default:
+				VERIFY(0);
+			}
+			b_addcodelist(code,head);
+			break;
+		case csC_loadaddr:
+			if (addr.kind == csC_env) {
+				csE_enventry eval = addr.u.eval;
+				VERIFY(eval);
+				VERIFY(eval->kind == csE_var);
+				csF_access acc = eval->u.var.access;
+				VERIFY(acc);
+				if (acc->kind == f_frame){
+					code = csO_mkcode(OP_LOADA,acc->offset);
+				} else if (acc->kind == f_static) {
+					code = csO_mkcode(OP_LOADA,acc->offset);
+				} else VERIFY(0);
+			} else VERIFY(0);
+			b_addcodelist(code,head);
+			break;
+		case csC_storel:
+			code = csO_mkcode(OP_STOREL,0);
+			b_addcodelist(code,head);
+			break;
+		case csC_stores:
+			code = csO_mkcode(OP_STORES,0);
+			b_addcodelist(code,head);
+			break;
+		case csC_fjp:{
+			csT_label lab = addr.u.lab;
+			long l = (long)csH_tablook(labtab, lab);
+			code = csO_mkcode(OP_FJP,l-p_count_-1);
+			csB_codelist list = b_addcodelist(code,head);
+			if (!l) {
+				b_addlablelist(list,lab,p_count_,&labhead);
+			}
+			break;
 		}
-		case csC_lable: {
-			VERIFY(p_pos_->res.kind == caC_lable);
-			csT_label lab = p_pos_->res.u.lab;
+		case csC_tjp:{
+			csT_label lab = addr.u.lab;
+			long l = (long)csH_tablook(labtab, lab);
+			code = csO_mkcode(OP_TJP,l-p_count_-1);
+			csB_codelist list = b_addcodelist(code,head);
+			if (!l) {
+				b_addlablelist(list,lab,p_count_,&labhead);
+			}
+			break;
+		}
+		case csC_ujp:{
+			csT_label lab = addr.u.lab;
+			long l = (long)csH_tablook(labtab, lab);
+			code = csO_mkcode(OP_UJP,l-p_count_-1);
+			csB_codelist list = b_addcodelist(code,head);
+			if (!l) {
+				b_addlablelist(list,lab,p_count_,&labhead);
+			}
+			break;
+		}
+		case csC_lab:{
+			csT_label lab = addr.u.lab;
 			VERIFY(lab);
 			VERIFY(!csH_tablook(labtab, lab));
 			csH_tabinsert(labtab, lab, (void*)(long)p_count_);
 			continue;
 		}
-		case csC_assign: {
-			csG_byte resloc = o_getreg_(regtab,p_pos_->res,&p_count_,&p_startreg_,head);
-			csG_byte arg1loc =  o_getreg_(regtab,p_pos_->arg1,&p_count_,&p_startreg_,head);
-			csO_code code = csO_iABC(OP_MOVE,resloc,arg1loc,0);
+		case csC_add:
+			code = csO_mkcode(OP_ADD,0);
 			b_addcodelist(code,head);
 			break;
-		}
-		case csC_goto: {
-			csT_label lab = p_pos_->res.u.lab;
-			long l = (long)csH_tablook(labtab, lab);
-			csO_code code = csO_iAsBx(OP_JMP,0,l-p_count_-1);
-			csB_codelist list = b_addcodelist(code,head);
-			if (!l) {
-				b_addlablelist(list,lab,p_count_,&labhead);
-			}
-			break;
-		}
-		case csC_not:
-			VERIFY(0);
-			break;
-		case csC_iffalse:{
-			csT_label lab = p_pos_->res.u.lab;
-			long l = (long)csH_tablook(labtab, lab);
-			csG_byte arg1loc =  o_getreg_(regtab,p_pos_->arg1,&p_count_,&p_startreg_,head);
-			csO_code code = csO_iAsBx(OP_IFFALSE,arg1loc,l-p_count_-1);
-			csB_codelist list = b_addcodelist(code,head);
-			if (!l) {
-				b_addlablelist(list,lab,p_count_,&labhead);
-			}
-			break;
-		}
-		case csC_if:{
-			csT_label lab = p_pos_->res.u.lab;
-			long l = (long)csH_tablook(labtab, lab);
-			csG_byte arg1loc =  o_getreg_(regtab,p_pos_->arg1,&p_count_,&p_startreg_,head);
-			csO_code code = csO_iAsBx(OP_IF,arg1loc,l-p_count_-1);
-			csB_codelist list = b_addcodelist(code,head);
-			if (!l) {
-				b_addlablelist(list,lab,p_count_,&labhead);
-			}
-			break;
-		}
-		case csC_add: {
-			csG_byte arg1loc = o_getreg_(regtab,p_pos_->arg1,&p_count_,&p_startreg_,head);
-			csG_byte arg2loc =  o_getreg_(regtab,p_pos_->arg2,&p_count_,&p_startreg_,head);
-			csG_byte resloc = o_getreg_(regtab,p_pos_->res,&p_count_,&p_startreg_,head);
-			csO_code code = csO_iABC(OP_ADD,resloc,arg1loc,arg2loc);
-			b_addcodelist(code,head);
-			break;
-		}
-		case csC_call:{
-			csG_byte arg1loc = o_getreg_(regtab,p_pos_->arg1,&p_count_,&p_startreg_,head);
-			VERIFY(p_pos_->arg2.kind == csC_intconst);
-			csG_byte arg2loc =  p_pos_->arg2.u.ival;
-			csG_byte resloc = o_getreg_(regtab,p_pos_->res,&p_count_,&p_startreg_,head);
-			csO_code code = csO_iABC(OP_CALL,resloc,arg1loc,arg2loc);
-			b_addcodelist(code,head);
-			break;
-		}
-		case csC_param: {
-			csG_byte resloc = o_getreg_(regtab,p_pos_->res,&p_count_,&p_startreg_,head);
-			csO_code code = csO_iABC(OP_PARAM,resloc,0,0);
-			b_addcodelist(code,head);
-			break;
-		}
 		case csC_minus:
-		case csC_multiply:
-		case csC_divide:
-		case csC_sub:
-		case csC_or:
-		case csC_and:
-			p_count_--;
-			break;
-		case csC_return:{
-			csO_code code = csO_iABC(OP_RETURN,0,0,0);
+			code = csO_mkcode(OP_MINUS,0);
 			b_addcodelist(code,head);
-			break;
-		}
-		case csC_eq:{
-			csG_byte arg1loc = o_getreg_(regtab,p_pos_->arg1,&p_count_,&p_startreg_,head);
-			csG_byte arg2loc =  o_getreg_(regtab,p_pos_->arg2,&p_count_,&p_startreg_,head);
-			csG_byte resloc = o_getreg_(regtab,p_pos_->res,&p_count_,&p_startreg_,head);
-			csO_code code = csO_iABC(OP_EQ,resloc,arg1loc,arg2loc);
-			b_addcodelist(code,head);
-			break;
-		}
-		case csC_neq:
-			VERIFY(0);
-		case csC_lt:{
-			csG_byte arg1loc = o_getreg_(regtab,p_pos_->arg1,&p_count_,&p_startreg_,head);
-			csG_byte arg2loc =  o_getreg_(regtab,p_pos_->arg2,&p_count_,&p_startreg_,head);
-			csG_byte resloc = o_getreg_(regtab,p_pos_->res,&p_count_,&p_startreg_,head);
-			csO_code code = csO_iABC(OP_LT,resloc,arg1loc,arg2loc);
-			b_addcodelist(code,head);
-			break;
-		}
-		case csC_lq:{
-			csG_byte arg1loc = o_getreg_(regtab,p_pos_->arg1,&p_count_,&p_startreg_,head);
-			csG_byte arg2loc =  o_getreg_(regtab,p_pos_->arg2,&p_count_,&p_startreg_,head);
-			csG_byte resloc = o_getreg_(regtab,p_pos_->res,&p_count_,&p_startreg_,head);
-			csO_code code = csO_iABC(OP_LE,resloc,arg1loc,arg2loc);
-			b_addcodelist(code,head);
-			break;
-		}
-		case csC_gt:
-		case csC_gq:
-			VERIFY(0);
 			break;
 		default:
 			VERIFY(0);
 		}
-
 		p_count_++;
 	}
-
 	b_backpatch_(labtab,&labhead);
-
 	return p_count_;
-}
-
-static csG_byte o_getreg_(csH_table regtab,csC_address addr,int *offset,int *statrreg,csL_list *head)
-{
-	csG_byte foo;
-	switch (addr.kind) {
-	case csC_temp:{
-		int tmp = addr.u.tmp->num;
-		int reg = (int)(long)csH_tablook(regtab, (void*)(long)tmp);
-		if (!reg) {
-			csH_tabinsert(regtab, (void*)(long)tmp, (void*)(long)(*statrreg));
-			foo = (*statrreg)++;
-			return foo;
-		}
-		foo = reg;
-		break;
-	}
-	case csC_env: {
-		csE_enventry e = addr.u.eval;
-		VERIFY(e);
-		if (e->kind == csE_var) {
-			csF_access access = e->u.var.access;
-			VERIFY(access);
-			if (access->kind == f_reg) {
-				VERIFY(access->u.reg);
-				foo = access->u.reg->num;
-			} else if (access->kind == f_static) {
-				foo = (*statrreg)++;
-				csO_code code = csO_iABx(OP_LOADSTATIC,foo,access->u.offset);
-				b_addcodelist(code,head);
-				(*offset)++;
-			} else {
-				VERIFY(0);
-			}
-		} else {
-			VERIFY(e->u.fun.frame);
-			foo = e->u.fun.frame->offset;
-		}
-		break;
-	}
-	case csC_intconst: {
-		foo = (*statrreg)++;
-		csG_2byte bx = b_constregin_int_(addr.u.ival);
-		csO_code code = csO_iABx(OP_LOADCONST,foo,bx);
-		b_addcodelist(code,head);
-		(*offset)++;
-		break;
-	}
-	case csC_strconst:{
-		foo = (*statrreg)++;
-		csG_2byte bx = b_constregin_str_(addr.u.str);
-		csO_code code = csO_iABx(OP_LOADCONST,foo,bx);
-		b_addcodelist(code,head);
-		(*offset)++;
-		break;
-	}
-	case csC_boolconst:{
-		foo = (*statrreg)++;
-		csG_2byte bx =  b_constregin_bool_(addr.u.bval);
-		csO_code code = csO_iABx(OP_LOADCONST,foo,bx);
-		b_addcodelist(code,head);
-		(*offset)++;
-		break;
-	}
-	default:
-		VERIFY(0);
-	}
-	return foo;
 }
 
 static void b_backpatch_(csH_table labtab,csL_list *head)
@@ -405,22 +320,10 @@ static void b_backpatch_(csH_table labtab,csL_list *head)
 		csO_code code = ll->code->code;
 		csT_label lab = ll->lab;
 		long l = (long)csH_tablook(labtab, lab);
-		//VERIFY(l);
-		switch (csO_iop(code)) {
-		case OP_JMP:
-			ll->code->code = csO_iAsBx(OP_JMP,0,l-ll->offset-1);
-			break;
-		case OP_IF:
-			ll->code->code = csO_iAsBx(OP_IF,csO_iA(code),l-ll->offset-1);
-			break;
-		case OP_IFFALSE:
-			ll->code->code = csO_iAsBx(OP_IFFALSE,csO_iA(code),l-ll->offset-1);
-			break;
-		default:
-			VERIFY(0);
-		}
+		
 	}
 }
+
 static csB_codelist b_addcodelist(csO_code code,csL_list *head)
 {
 	VERIFY(head);
@@ -441,12 +344,12 @@ static void b_addlablelist(csB_codelist code,csT_label lab,int offset,csL_list *
 	list_add_tail(&foo->next, head);
 }
 
-static csG_2byte b_constregin_str_(csG_string str)
+static csO_4byte b_constregin_str_(csG_string str)
 {
 	static csH_table b_strtab_;
 	if (!b_strtab_) 
 		b_strtab_ = csH_tabempty(csU_strhash,csU_strequal,NULL);
-	csG_2byte off = (csG_2byte)(long)csH_tablook(b_strtab_, str);
+	csO_4byte off = (csO_4byte)(long)csH_tablook(b_strtab_, str);
 	if (!off) {
 		csH_tabinsert(b_strtab_, str, (void*)(long)b_const_offset_);
 		b_regin_static_str_(str,b_const_offset_);
@@ -455,12 +358,12 @@ static csG_2byte b_constregin_str_(csG_string str)
 	return off;
 }
 
-static csG_2byte b_constregin_int_(int num)
+static csO_4byte b_constregin_int_(int num)
 {
 	static csH_table b_inttab_;
 	if (!b_inttab_) 
 		b_inttab_ = csH_tabempty(NULL,NULL,NULL);
-	csG_2byte off = (csG_2byte)(long)csH_tablook(b_inttab_, (void*)(long)num);
+	csO_4byte off = (csO_4byte)(long)csH_tablook(b_inttab_, (void*)(long)num);
 	if (!off) {
 		csH_tabinsert(b_inttab_, (void*)(long)num, (void*)(long)b_const_offset_);
 		b_regin_const_int_(num,b_const_offset_);
@@ -470,12 +373,12 @@ static csG_2byte b_constregin_int_(int num)
 	return off;
 }
 
-static csG_2byte b_constregin_bool_(csG_bool boo)
+static csO_4byte b_constregin_bool_(csG_bool boo)
 {
 	static csH_table b_booltab_;
 	if (!b_booltab_) 
 		b_booltab_ = csH_tabempty(NULL,NULL,NULL);
-	csG_2byte off = (csG_2byte)(long)csH_tablook(b_booltab_, (void*)(long)boo);
+	csO_4byte off = (csO_4byte)(long)csH_tablook(b_booltab_, (void*)(long)boo);
 	if (!off) {
 		csH_tabinsert(b_booltab_, (void*)(long)boo, (void*)(long)b_const_offset_);
 		b_regin_const_bool_(boo,b_const_offset_);

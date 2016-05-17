@@ -3,24 +3,10 @@
 #include "csglobal.h"
 #include "cssymbol.h"
 
-typedef struct t_temp_ *csT_temp;
-struct t_temp_ {
-	int num;
-};
-extern csT_temp csT_newtemp(void);
+typedef struct t_lable_ *csT_label;
 
-typedef struct t_templist_ *csT_templist;
-extern csT_templist csT_mktemplist(csT_temp h, csT_templist t);
-
-typedef csS_symbol csT_label;
 
 
 extern csT_label csT_newlabel(void);
-extern csT_label csT_namedlabel(csG_string name);
-
-extern void printTemp(csT_temp h);
-/*
-char* CStmpLabelstring(csT_label s);
-void printLable(CSlabel h);
-*/
+extern void csT_plabel(csT_label lab);
 #endif/*CS_TEMP_H*/

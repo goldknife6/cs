@@ -30,6 +30,7 @@ static csA_exprlist 	p_exprlist_(void);
 static csA_stmt  		p_stmt_(void);
 static csA_stmtlist 	p_stmtlist_(void);
 static csA_arglist 		p_arglist_(void);
+static csA_const 		p_const_(void);
 
 #define MATCH(tok,msg,lab) ({if (!match(tok,msg)) goto lab;})
 
@@ -93,9 +94,9 @@ static csA_dec p_dec_(void)
 		MATCH(csL_ID,"missing id",sync);
 		if (token.kind == csL_ASSIGN) { //simpleexpr is optional
 			MATCH(csL_ASSIGN,"missing =",sync);
-			csA_simplelist list = p_simplelist_();
-			VERIFY(list);
-			csA_setdecvarlist(foo,list);
+			csA_const c = p_const_();
+			VERIFY(c);
+			csA_setdecvarconst(foo,c);
 		}
 		MATCH(csL_SEMICOLON,"missing ;",sync);
 	} else if (token.kind == csL_DEF) {
@@ -257,6 +258,44 @@ static csA_mutable p_mutable_(void)
 	}
 	MATCH(csL_ID,"missing mutable",sync);
 	foo->pos = pos;
+	return foo;
+sync:
+	VERIFY(0);
+}
+
+static csA_const p_const_(void)
+{
+	csA_const foo = csA_mkconst();
+	csG_pos pos = token.pos;
+	switch (token.kind) {
+	case csL_NUM:
+		foo->kind = csA_cnum_;
+		foo->u.val = csL_tokennum(token);
+		MATCH(csL_NUM,"missing numconst",sync);
+		break;
+	case csL_CHAR:
+		foo->kind = csA_cchar_;
+		foo->u.val = csL_tokenchar(token);
+		MATCH(csL_CHAR,"missing charconst",sync);
+		break;
+	case csL_STRING:
+		foo->kind = csA_cstr_;
+		foo->u.str = csL_tokenstr(token);
+		MATCH(csL_STRING,"missing strconst",sync);
+		break;
+	case csL_TRUE:
+		foo->kind = csA_cbool_;
+		foo->u.val = TRUE;
+		MATCH(csL_TRUE,"missing boolconst",sync);
+		break;
+	case csL_FALSE:
+		foo->kind = csA_cbool_;
+		foo->u.val = FALSE;
+		MATCH(csL_FALSE,"missing boolconst",sync);
+		break;
+	default:
+		VERIFY(0);
+	}
 	return foo;
 sync:
 	VERIFY(0);
