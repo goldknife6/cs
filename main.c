@@ -18,8 +18,6 @@ void csB_genbytecode();
 csG_bool csG_error = FALSE;
 int main(int argc, char *argv[])
 {
-	outs = fopen("123","w");
-
 	ins = stdout;
 	errors = stdout;
 	debugs = stdout;
@@ -31,7 +29,7 @@ int main(int argc, char *argv[])
 	setvbuf(outs, NULL, _IONBF, 0);
 	setvbuf(errors, NULL, _IONBF, 0);
 	setvbuf(debugs, NULL, _IONBF, 0);
-
+	outs = fopen("123","w");
 	//testhash();
 	//testlex();
 	//testsym();

@@ -6,36 +6,29 @@
 
 
 
-typedef struct csM_regin {
+#define CONST_REGIN_MAX 	1000
+#define STATIC_REGIN_MAX 	1000
+#define STACK_REGIN_MAX 	1000
+#define RECORD_REGIN_MAX 	1000
+#define PROC_REGIN_MAX		1000
+
+typedef struct m_record_ {
+	int m_fp_;
+	int m_ip_;
+	int m_funcnum_;
+} csM_record;
+
+typedef struct m_proc_ {
 	size_t size;
-	csO_object *obj;
-} csM_regin;
-
-typedef struct csM_proc {
-	size_t size;
-	csO_code *code;
-} *csM_proc;
-
-typedef struct csM_procregin {
-	size_t size;
-	csM_proc *code;
-} csM_procregin;
+	csO_code *ins;
+} csM_proc;
 
 
-typedef struct m_stackinf_ {
-	int ret;
-} m_stackinf_;
 
-typedef struct csM_stackinf {
-	size_t size;
-  	m_stackinf_ *inf;
-} csM_stackinf;
+extern csO_object csM_const_regin[];
+extern csO_object csM_static_regin[];
+extern csO_object csM_stack_regin[];
+extern csM_record csM_record_regin[];
 
-
-extern csM_regin csM_static_regin;
-extern csM_regin csM_const_regin;
-extern csM_procregin csM_proc_regin;
-extern csM_regin csM_stack_regin;
-extern csM_stackinf csM_stack_inf;
 extern void csM_load_bytecode(FILE *in);
 #endif/*!CS_MEMORY_H*/

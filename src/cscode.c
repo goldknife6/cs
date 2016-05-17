@@ -47,7 +47,7 @@ static void c_arglist_(csS_table vtab,csS_table ttab,csA_arglist foo);
 
 
 
-static void c_frag_(csF_access access,csC_fraglist fraglist,c_info_ inf);
+static void c_fragstatic_(csF_access access,csC_fraglist fraglist,c_info_ inf);
 static csC_quadlist c_quadlist_();
 static csC_address c_address_int_(int intconst);
 static csC_address c_address_string_(csG_string strconst);
@@ -144,9 +144,9 @@ static void c_dec_(csS_table vtab,csS_table ttab,csA_dec foo,csC_fraglist fragli
 				c_emsg_(foo->pos,"incompatible types when assigning");
 				return ;
 			}
-			c_frag_(access,fraglist, info);
+			c_fragstatic_(access,fraglist, info);
 		} else {
-			c_frag_(access,fraglist, c_infoconst_(ty));
+			c_fragstatic_(access,fraglist, c_infoconst_(ty));
 		}
 		break;
 	}
@@ -373,10 +373,10 @@ static c_info_ c_stmt_(csS_table vtab,csS_table ttab,csA_stmt pos,csT_label labl
 			if (list2) {
 				inf = c_exprlist_(vtab,ttab,list2,TRUE);
 				c_emitcode_(csC_tjp,c_address_lable_(loopbody));
-				c_emitcode_(csC_lab,c_address_lable_(out));
 			} else {
 				c_emitcode_(csC_ujp,c_address_lable_(loopbody));
 			}
+			c_emitcode_(csC_lab,c_address_lable_(out));
 			break;
 		}
 		case csA_returnstmt: {
@@ -717,11 +717,27 @@ static void c_emsg_(csG_pos pos,char *message,...)
 	va_end(ap);
 }
 
-static void c_frag_(csF_access access,csC_fraglist fraglist,c_info_ inf)
+static void c_fragstatic_(csF_access access,csC_fraglist fraglist,c_info_ inf)
 {
+	csC_frag foo = csU_malloc(sizeof(*foo));
+	INIT_LIST_HEAD(&foo->next);
+	if (inf.kind == c_const_) {
+		if (inf.ty == csT_typeint()) {
+			foo->kind = csC_intfrag;
+			foo->u.intv = inf.u.intconst;
+		} else if (inf.ty == csT_typestring()) {
+			foo->kind = csC_strfrag;
+			foo->u.strv = inf.u.strconst;
+		} else if (inf.ty == csT_typebool()) {
+			foo->kind = csC_boolfrag;
+			foo->u.boolv = inf.u.boolconst;
+		} else VERIFY(0);
+	} else VERIFY(0);
 	VERIFY(access);
+	VERIFY(access->kind == f_static);
+	foo->offset = access->offset;
 	VERIFY(fraglist);
-	VERIFY(inf.kind != c_empty_);
+	list_add_tail(&foo->next, fraglist);
 }
 
 static csC_quadlist c_quadlist_()

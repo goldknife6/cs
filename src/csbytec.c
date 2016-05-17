@@ -74,6 +74,7 @@ static void b_regin_(csC_fraglist fraglist)
 			int offset = o_pos_->offset;
 			VERIFY(offset);
 			b_regin_static_int_(o_pos_->u.intv,offset);
+			
 			break;
 		}
 		case csC_boolfrag:{
@@ -143,7 +144,7 @@ static void b_bytecode_(FILE *outs)
 			list_for_each_entry(p_code_, o_pos_->u.head, next) {
 				code = p_code_->code;
 				csO_printcode(code);
-				//fwrite(&code.u, sizeof(code), 1, outs);
+				fwrite(&code, sizeof(code), 1, outs);
 			}
 			break;
 		}
@@ -320,7 +321,19 @@ static void b_backpatch_(csH_table labtab,csL_list *head)
 		csO_code code = ll->code->code;
 		csT_label lab = ll->lab;
 		long l = (long)csH_tablook(labtab, lab);
-		
+		switch (csO_codeop(code)) {
+		case OP_UJP:
+			ll->code->code = csO_mkcode(OP_UJP,l-ll->offset-1);
+			break;
+		case OP_TJP:
+			ll->code->code = csO_mkcode(OP_TJP,l-ll->offset-1);
+			break;
+		case OP_FJP:
+			ll->code->code = csO_mkcode(OP_FJP,l-ll->offset-1);
+			break;
+		default:
+			VERIFY(0);
+		}
 	}
 }
 

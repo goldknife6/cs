@@ -20,7 +20,10 @@ typedef struct {
 	csG_int32 f_offset_;
 } csF_format;
 
+#define FORMATID 0x22768954
+
 typedef struct {
+	csG_int32 id;
 	csG_int32 staticsize;
 	csG_int32 constsize;
 	csG_int32 procsize;

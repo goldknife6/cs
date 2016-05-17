@@ -33,6 +33,7 @@ csF_format csF_proc(int size,int offset)
 csF_fmtheader csF_header(int staticsize,int constsize,int procsize)
 {
 	csF_fmtheader header;
+	header.id = FORMATID;
 	header.staticsize = staticsize;
 	header.constsize = constsize;
 	header.procsize = procsize;
