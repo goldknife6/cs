@@ -19,7 +19,7 @@ static csO_string o_ostring_(char *src,int size)
 	foo->size = size;
 	return foo;
 }
-
+/*
 csO_object csO_int_object(int val)
 {
 	csO_object foo = malloc(sizeof(*foo));
@@ -37,17 +37,17 @@ csO_object csO_bool_object(csG_bool val)
 	foo->u.bval = val;
 	
 	return foo;
-}
+}*/
 
 csO_object csO_string_object(char * val,size_t size)
 {
 	csO_object foo = malloc(sizeof(*foo));
 	o_initheader_(&foo->header);
-	foo->kind = csO_str;
+	foo->kind = csO_string_;
 	foo->u.sval = o_ostring_(val,size);
 	return foo;
 }
-
+/*
 void csO_pobject(csO_object obj)
 {
 	VERIFY(obj);
@@ -64,6 +64,6 @@ void csO_pobject(csO_object obj)
 	default:
 		VERIFY(0);
 	}
-}
+}*/
 
 

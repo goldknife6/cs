@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
 	ins = stdout;
 	errors = stdout;
 	debugs = stdout;
-
+	outs = fopen("123","w");
 	if (argc != 2) emitError("usage: %s <filename>",argv[0]);
 	filename = argv[1];
 	ins= fopen(filename,"r");
@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
 	setvbuf(outs, NULL, _IONBF, 0);
 	setvbuf(errors, NULL, _IONBF, 0);
 	setvbuf(debugs, NULL, _IONBF, 0);
-	outs = fopen("123","w");
+	
 	//testhash();
 	//testlex();
 	//testsym();

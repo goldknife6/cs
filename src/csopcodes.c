@@ -41,6 +41,11 @@ csO_byte csO_codeop(csO_code code)
 	return code.opkind;
 }
 
+csO_4byte csO_codeval(csO_code code)
+{
+	return code.d;
+}
+
 csO_code csO_mkcode(csO_byte kind,csO_4byte i)
 {
 	csO_code code;

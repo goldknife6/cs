@@ -61,7 +61,7 @@ static void b_regin_(csC_fraglist fraglist)
 			VERIFY(body);
 			VERIFY(frame);
 			int count = b_genproc_(body,prochead);
-			b_regin_proc_(prochead,count*4,frame->offset);
+			b_regin_proc_(prochead,count*sizeof(csO_code),frame->offset);
 			break;
 		}
 		case csC_strfrag: {
@@ -74,7 +74,7 @@ static void b_regin_(csC_fraglist fraglist)
 			int offset = o_pos_->offset;
 			VERIFY(offset);
 			b_regin_static_int_(o_pos_->u.intv,offset);
-			
+
 			break;
 		}
 		case csC_boolfrag:{
@@ -302,6 +302,10 @@ static int b_genproc_(csC_quadlist body,csL_list *head)
 			break;
 		case csC_minus:
 			code = csO_mkcode(OP_MINUS,0);
+			b_addcodelist(code,head);
+			break;
+		case csC_eq:
+			code = csO_mkcode(OP_EQ,0);
 			b_addcodelist(code,head);
 			break;
 		default:

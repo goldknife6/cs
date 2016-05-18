@@ -56,5 +56,6 @@ typedef enum {
 } csO_opcode;
 extern void csO_printcode(csO_code code);
 extern csO_byte csO_codeop(csO_code code);
+extern csO_4byte csO_codeval(csO_code code);
 extern csO_code csO_mkcode(csO_byte kind,csO_4byte i);
 #endif/*!CS_OPCODES_H*/
