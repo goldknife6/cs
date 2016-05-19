@@ -181,7 +181,7 @@ void csM_load_bytecode(FILE *in)
 	fread(&header, sizeof(header), 1, in);
 	//read header info
 	VERIFY(header.id == FORMATID);
-	m_printheader_(header);
+	//m_printheader_(header);
 	staticsize = header.staticsize;
 	constsize = header.constsize;
 	procsize = header.procsize;
@@ -191,7 +191,7 @@ void csM_load_bytecode(FILE *in)
 		int c = fread(&fmt, sizeof(fmt), 1, in);
 		int offset = fmt.f_offset_;
 		int size = fmt.f_size_;
-		csF_printfmt(fmt);
+		//csF_printfmt(fmt);
 		VERIFY(c);
 		csO_object obj = NULL;
 		csO_value v;
@@ -208,7 +208,7 @@ void csM_load_bytecode(FILE *in)
 			case f_str_:
 				VERIFY(size <= 100);
 				fread(buffer, size, 1, in);
-				obj = csO_string_object(buffer,size);
+				obj = csS_string(buffer,size);
 				v = csO_object_value(obj);
 				break;
 			case f_bool_:{
@@ -246,7 +246,7 @@ void csM_load_bytecode(FILE *in)
 			case f_str_:
 				VERIFY(size <= 100);
 				fread(buffer, size, 1, in);
-				obj = csO_string_object(buffer,size);
+				obj = csS_string(buffer,size);
 				v = csO_object_value(obj);
 				break;
 			case f_bool_:{

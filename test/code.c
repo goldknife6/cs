@@ -116,6 +116,9 @@ static void c_printquad(csC_quad quad)
 	case csC_cup:
 		fprintf(debugs, "cup ");
 		break;
+	case csC_cbp:
+		fprintf(debugs, "cbp ");
+		break;
 	case csC_ret:
 		fprintf(debugs, "ret ");
 		break;

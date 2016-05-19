@@ -38,7 +38,7 @@ csL_token csL_gettoken()
 		case START:
 			if (isdigit(c))
            		currstate = INNUM;
-         	else if (isalpha(c))
+         	else if (isalpha(c) || c == '_')
            		currstate = INID;
          	else if ((c == ' ') || (c == '\t') || (c == '\n'))
            		save = FALSE;
@@ -133,7 +133,7 @@ csL_token csL_gettoken()
 			}
 			break;
 		case INID:
-			if (!isalpha(c) && !isdigit(c)) {
+			if (!isalpha(c) && !isdigit(c) && c != '_') {
 				currstate = DONE;
 				kind = csL_ID;
 				save = FALSE;
@@ -180,6 +180,17 @@ csL_token csL_gettoken()
 				save = FALSE;
 				currstate = DONE;
 				kind = csL_STRING;
+			}
+			if (c == '\\') {
+				int ch = get();
+				switch (ch) {
+				case 'n' :
+					c = '\n';break;
+				case 't' :
+					c = '\t';break;
+				default:
+					c = ch;
+				}
 			}
 			break;
 		case INCHAR:{

@@ -1,19 +1,36 @@
 #include "csenv.h"
 #include "csutil.h"
 #include "cstype.h"
+#include "csframe.h"
 
 static void e_free_(void *key,void *val)
 {
 
 }
 
+static void e_buildin_(csS_table vtab,csG_string name,csT_type retty,csT_type formalsty,int offset)
+{
+	VERIFY(name);VERIFY(vtab);
+	VERIFY(retty);VERIFY(formalsty);
+	csS_symbol s = csS_mksymbol(name);
+	csE_enventry foo = csU_malloc(sizeof(*foo));
+	csT_typelist formals = csT_mktypelist();
+	csT_typelistadd(formals,formalsty);
+
+	foo->kind = csE_fun;
+	foo->u.fun.buildin = TRUE;
+	foo->u.fun.res = retty;
+	foo->u.fun.formals = formals;
+	foo->name = s;
+	foo->u.fun.frame = csF_buildin_frame(offset);
+	csS_insert(vtab,s,foo);
+} 
 
 csS_table csE_baseval(void)
 {
 	csS_table foo = csS_empty(e_free_);
-	//csS_symbol name = csS_mksymbol("printf");
-	//csE_enventry e = e_printf_(name);
-	//csS_insert(foo,name,e);
+	e_buildin_(foo,"_buildin_printint_",csT_typevoid(),csT_typeint(),1);
+	e_buildin_(foo,"_buildin_printstring_",csT_typevoid(),csT_typestring(),2);
 	return foo;
 }
 
@@ -46,6 +63,7 @@ csE_enventry csE_funentry(csT_typelist formals,csT_type res,csS_symbol name,csF_
 	}
 	csE_enventry foo = csU_malloc(sizeof(*foo));
 	foo->kind = csE_fun;
+	foo->u.fun.buildin = FALSE;
 	foo->u.fun.res = res;
 	foo->u.fun.formals = formals;
 	foo->name = name;

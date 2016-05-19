@@ -21,7 +21,7 @@ TESTOBJFILES= $(patsubst %.o,$(OBJDIR)/%.o,$(TESTFILE))
 TESTDEPS 	= $(patsubst %.o,%.d,$(TESTOBJFILES))
 
 VMSRC		= vm
-VMFILES		= csvm.o csmemory.o csobject.o
+VMFILES		= csvm.o csmemory.o csobject.o csstring.o
 VMOBJFILES 	= $(patsubst %.o,$(OBJDIR)/%.o,$(VMFILES))
 VMDEPS 		= $(patsubst %.o,%.d,$(VMOBJFILES))
 VMTARGET 	= csvm

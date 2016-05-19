@@ -684,7 +684,10 @@ static c_info_ c_immutable_(csS_table vtab,csS_table ttab,csA_immutable foo,csG_
     		if (formals->count != 0)
     			c_emsg_(csA_immutpos(foo),"wrong number of arguments at function %s",csS_name(funname));
     	}
-    	c_emitcode_(csC_cup,c_address_env_(e));
+    	if (e->u.fun.buildin)
+    		c_emitcode_(csC_cbp,c_address_env_(e));
+    	else 
+    		c_emitcode_(csC_cup,c_address_env_(e));
     	if (emit)
     		c_emitcode_(csC_ssp,c_address_int_(-1));
     	inf.ty = resty;

@@ -10,6 +10,13 @@ csF_frame csF_newframe()
 	return foo;
 }
 
+csF_frame csF_buildin_frame(int offset)
+{
+	csF_frame foo =  csU_malloc(sizeof(*foo));
+	foo->offset = offset;
+	return foo;
+}
+
 csF_access csF_alloclocal(csF_frame frame)
 {
 	VERIFY(frame);

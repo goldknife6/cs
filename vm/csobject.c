@@ -10,60 +10,39 @@ static void o_initheader_(csO_gcheader *h)
 	h->marked = FALSE;
 }
 
-static csO_string o_ostring_(char *src,int size)
-{
-	csO_string foo = malloc(sizeof(*foo));
-	foo->s = malloc(size + 1);
-	foo->s[size] = 0;
-	strncpy(foo->s,src,size);
-	foo->size = size;
-	return foo;
-}
-/*
-csO_object csO_int_object(int val)
+csO_object csO_empty_object()
 {
 	csO_object foo = malloc(sizeof(*foo));
 	o_initheader_(&foo->header);
-	foo->kind = csO_int;
-	foo->u.ival = val;
+	foo->kind = csO_empty_;
 	return foo;
 }
 
-csO_object csO_bool_object(csG_bool val)
+csO_object csO_string_object_add(csO_object s1,csO_object s2)
 {
-	csO_object foo = malloc(sizeof(*foo));
-	o_initheader_(&foo->header);
-	foo->kind = csO_bool;
-	foo->u.bval = val;
-	
-	return foo;
-}*/
-
-csO_object csO_string_object(char * val,size_t size)
-{
-	csO_object foo = malloc(sizeof(*foo));
-	o_initheader_(&foo->header);
-	foo->kind = csO_string_;
-	foo->u.sval = o_ostring_(val,size);
-	return foo;
+	static char buffer[1024];
+	VERIFY(s1);
+	VERIFY(s2);
+	VERIFY(s1->kind == csO_string_);
+	VERIFY(s2->kind == csO_string_);
+	size_t size = s1->u.sval.size + s2->u.sval.size;
+	VERIFY(size < 1024);
+	sprintf(buffer, "%s%s",s1->u.sval.s,s2->u.sval.s);
+	//fprintf(stderr, "%s%s",s1->u.sval.s,s1->u.sval.s);
+	//VERIFY(0);
+	return csS_string(buffer,size);
 }
-/*
+
 void csO_pobject(csO_object obj)
 {
 	VERIFY(obj);
 	switch (obj->kind) {
-	case csO_int:
-		printf("%d", obj->u.ival);
-		break;
-	case csO_bool:
-		printf("%s", obj->u.bval ? "true":"false");
-		break;
-	case csO_str:
-		printf("%s", obj->u.sval->s);
+	case csO_string_:
+		printf("%s", obj->u.sval.s);
 		break;
 	default:
 		VERIFY(0);
 	}
-}*/
+}
 
 

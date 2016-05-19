@@ -214,6 +214,17 @@ static int b_genproc_(csC_quadlist body,csL_list *head)
 			} else VERIFY(0);
 			b_addcodelist(code,head);
 			break;
+		case csC_cbp:
+			if (addr.kind == csC_env) {
+				csE_enventry eval = addr.u.eval;
+				VERIFY(eval);
+				VERIFY(eval->kind == csE_fun);
+				csF_frame f = eval->u.fun.frame;
+				VERIFY(f);
+				code = csO_mkcode(OP_CBP,f->offset);
+			} else VERIFY(0);
+			b_addcodelist(code,head);
+			break;
 		case csC_ret:
 			code = csO_mkcode(OP_RET,0);
 			b_addcodelist(code,head);
@@ -336,6 +347,18 @@ static int b_genproc_(csC_quadlist body,csL_list *head)
 			code = csO_mkcode(OP_PRV,0);
 			b_addcodelist(code,head);
 			break;
+		case csC_mul:
+			code = csO_mkcode(OP_MUL,0);
+			b_addcodelist(code,head);
+			break;
+		case csC_neq:
+			code = csO_mkcode(OP_NEQ,0);
+			b_addcodelist(code,head);
+			break;
+		case csC_lt:
+			code = csO_mkcode(OP_LT,0);
+			b_addcodelist(code,head);
+			break;
 		default:
 			VERIFY(0);
 		}
@@ -397,7 +420,7 @@ static csO_4byte b_constregin_str_(csG_string str)
 	csO_4byte off = (csO_4byte)(long)csH_tablook(b_strtab_, str);
 	if (!off) {
 		csH_tabinsert(b_strtab_, str, (void*)(long)b_const_offset_);
-		b_regin_static_str_(str,b_const_offset_);
+		b_regin_const_str_(str,b_const_offset_);
 		return b_const_offset_++;
 	}
 	return off;

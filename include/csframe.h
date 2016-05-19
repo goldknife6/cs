@@ -23,4 +23,5 @@ struct f_frame_ {
 extern csF_frame csF_newframe(); 
 extern csF_access csF_alloclocal(csF_frame frame);
 extern csF_access csF_allocstatic();
+extern csF_frame csF_buildin_frame(int offset);
 #endif/*!CS_FRAME_H*/

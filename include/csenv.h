@@ -17,6 +17,7 @@ struct e_env_ {
 			csF_access access;
 		} var;
 		struct {
+			csG_bool buildin;
 			csT_typelist formals;
 			csT_type res;
 			csF_frame frame;

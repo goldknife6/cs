@@ -51,7 +51,7 @@ typedef enum {
 	csC_ujp,
 	csC_lab,
 	csC_cup,
-	csC_cbip,
+	csC_cbp,
 	csC_ret,
 	csC_or,
 	csC_and,
