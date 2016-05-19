@@ -9,25 +9,48 @@
 csO_value csM_const_regin[CONST_REGIN_MAX];	//const
 csO_value csM_static_regin[STATIC_REGIN_MAX];	//static
 csO_value csM_stack_regin[STACK_REGIN_MAX];	//stack
-csM_record csM_record_regin[RECORD_REGIN_MAX];	//record
+int csM_record_regin[RECORD_REGIN_MAX];	//record
 csM_proc csM_proc_regin[PROC_REGIN_MAX];		//proc
 
 int csM_pc;
 int csM_fp;
 int csM_sp;
 
-static int m_curproc_;
+static int m_rip_ = 0;
+int csM_procp;
 
 static void m_printheader_(csF_fmtheader header);
 static void m_printregin_();
 
 csO_code csM_nextins()
 {
-	csM_proc proc = csM_proc_regin[m_curproc_];
+	csM_proc proc = csM_proc_regin[csM_procp];
 	VERIFY(proc.ins);
 	size_t size = proc.size;
 	VERIFY(csM_pc < size);
 	return proc.ins[csM_pc++];
+}
+
+void csM_change_proc(int proc)
+{
+	VERIFY(proc >= 0);
+	csM_procp = proc;
+}
+
+void csM_push_record(int addr)
+{
+	VERIFY(addr >= 0);
+	VERIFY(m_rip_ < RECORD_REGIN_MAX);
+	csM_record_regin[m_rip_++] = addr;
+}
+
+int csM_pop_record()
+{
+	if(m_rip_ > 0)
+		return csM_record_regin[--m_rip_];
+	else {
+		exit(0);
+	}
 }
 
 csO_value csM_const_value(int offset)
@@ -84,8 +107,8 @@ csO_value csM_pop_value(void)
 void csM_push_value(csO_value v)
 {
 	VERIFY(v.kind != csO_empty_);
-	csM_stack_regin[csM_sp++] = v;
 	VERIFY(csM_sp < STACK_REGIN_MAX);
+	csM_stack_regin[csM_sp++] = v;
 }
 
 void csM_push_address(int addr)
@@ -99,7 +122,6 @@ void csM_push_address(int addr)
 
 int csM_pop_address(void)
 {
-	VERIFY(csM_sp > 0);
 	csO_value v = csM_pop_value();
 	VERIFY(v.kind == csO_addr_);
 	int addr = v.u.addr;
@@ -112,8 +134,18 @@ csO_value csM_active_record_value(int offset)
 	csO_value v;
 	VERIFY(offset > 0);
 	VERIFY(csM_fp + offset - 1 < STACK_REGIN_MAX);
+	VERIFY(csM_fp + offset - 1 >= 0);
 	v = csM_stack_regin[csM_fp + offset - 1];
 	return v;
+}
+
+void csM_store_active_record_value(int offset,csO_value v)
+{
+	VERIFY(offset > 0);
+	VERIFY(v.kind != csO_empty_);
+	VERIFY(csM_fp + offset - 1 < STACK_REGIN_MAX);
+	VERIFY(csM_fp + offset - 1 >= 0);
+	csM_stack_regin[csM_fp + offset - 1] = v;
 }
 
 csO_value csO_int_value(int val)
@@ -159,12 +191,13 @@ void csM_load_bytecode(FILE *in)
 		int c = fread(&fmt, sizeof(fmt), 1, in);
 		int offset = fmt.f_offset_;
 		int size = fmt.f_size_;
-		VERIFY(offset);
+		csF_printfmt(fmt);
 		VERIFY(c);
 		csO_object obj = NULL;
 		csO_value v;
 		switch (fmt.f_kind_) {
 		case f_static_:
+			VERIFY(offset);
 			switch (fmt.u.f_valkind_) {
 			case f_int_:{
 				int ival;
@@ -190,7 +223,11 @@ void csM_load_bytecode(FILE *in)
 			VERIFY(csM_static_regin[offset-1].kind == csO_empty_);
 			csM_static_regin[offset-1] = v;
 			break;
-		case f_prco_:{
+		case f_prco_: {
+			VERIFY(offset);
+			if (fmt.u.f_main_) {
+				csM_procp = offset-1;
+			}
 			csM_proc_regin[offset-1].size = size/sizeof(csO_code);
 			csO_code *code = malloc(size);
 			csM_proc_regin[offset-1].ins = code;
@@ -198,6 +235,7 @@ void csM_load_bytecode(FILE *in)
 			break;
 		}
 		case f_const_:
+			VERIFY(offset);
 			switch (fmt.u.f_valkind_) {
 			case f_int_:{
 				int ival;
@@ -242,39 +280,3 @@ static void m_printregin_()
 {
 
 }
-/*
-static char *csO_opnames[NUM_OPCODES+1] = {
-	"LOADC",
-	"LOADS",
-	"LOADL",
-	"LOADA",
-	"STORES",
-	"STOREL",
-	"MARK",
-	"ADD",
-	"SUB",
-	"MUL",
-	"DIV",
-	"EQ",
-	"NEQ",
-	"LT",
-	"LQ",
-	"GT",
-	"GQ",
-	"FJP",
-	"TJP",
-	"UJP",
-	"CUP",
-	"CBP",
-	"RET",
-	"OR",
-	"AND",
-	"MINUS",
-	"NOT",
-	NULL	
-};
-
-void csO_printcode(csO_code code)
-{
-	fprintf(stderr, "%s %d\n", csO_opnames[csO_codeop(code)],code.d);
-}*/

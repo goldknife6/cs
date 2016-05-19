@@ -9,7 +9,7 @@
 *	`B' : 16 bits
 *	`Bx' : signed 24 bits
 */
-#define NUM_OPCODES 27
+#define NUM_OPCODES 28
 /*
 ** R(x) - register
 ** Cons(x) - constant (in constant regin)
@@ -19,10 +19,11 @@ typedef char csO_byte;
 typedef short csO_2byte;
 typedef int csO_4byte;
 
+
 typedef struct {
 	csO_byte opkind;
 	csO_4byte d;
-} csO_code;
+} __attribute__((packed)) csO_code;
 
 typedef enum {
 	//name							description					
@@ -53,6 +54,8 @@ typedef enum {
 	OP_AND,
 	OP_MINUS,
 	OP_NOT,
+	OP_SSP,
+	OP_PRV,
 } csO_opcode;
 extern void csO_printcode(csO_code code);
 extern csO_byte csO_codeop(csO_code code);

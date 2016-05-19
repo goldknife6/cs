@@ -22,7 +22,10 @@ typedef struct csB_regin {
 	int size;
 	int offset;
 	union {
-		csL_list *head;//proc code list
+		struct {
+			csL_list *head;//proc code list
+			csG_bool main;
+		} fun;
 		struct {
 			csF_fmtvalkind kind;
 			union {

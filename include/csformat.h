@@ -31,7 +31,7 @@ typedef struct {
 
 static void csF_printfmt(csF_format fmt)
 {
-	fprintf(stdout, "%04x%04x%04x%04x\n",fmt.f_kind_,fmt.u.f_valkind_,fmt.f_size_,fmt.f_offset_);
+	//fprintf(stdout, "%04x%04x%04x%04x\n",fmt.f_kind_,fmt.u.f_valkind_,fmt.f_size_,fmt.f_offset_);
 	switch (fmt.f_kind_) {
 	case f_static_:
 		fprintf(stdout, "static:");
@@ -50,6 +50,7 @@ static void csF_printfmt(csF_format fmt)
 		}
 		break;
 	case f_prco_:
+		fprintf(stdout, "proc:");
 		break;
 	case f_const_:
 		fprintf(stdout, "const:");
@@ -70,12 +71,13 @@ static void csF_printfmt(csF_format fmt)
 	default:
 		VERIFY(0);
 	}
+	fprintf(stdout, "offset:%d:size:%d",fmt.f_offset_,fmt.f_size_);
 	fprintf(stdout, "\n");
 }
 
 
 extern csF_format csF_static(csF_fmtvalkind kind,int size,int offset);
 extern csF_format csF_const(csF_fmtvalkind kind,int size,int offset);
-extern csF_format csF_proc(int size,int offset);
+extern csF_format csF_proc(int size,int offset,csG_bool main);
 extern csF_fmtheader csF_header(int staticsize,int constsize,int procsize);
 #endif/*!CS_FORMAT_H*/

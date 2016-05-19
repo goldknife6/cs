@@ -29,6 +29,7 @@ struct c_address_ {
 		csT_label lab;
 	} u;
 };
+
 typedef enum {
 	csC_load,//load constant,static variable,local variable
 	csC_loadaddr,//load address
@@ -56,6 +57,9 @@ typedef enum {
 	csC_and,
 	csC_minus,
 	csC_not,
+	csC_entry,
+	csC_ssp,//sub sp
+	csC_prv,//push ret val
 } c_quadkind_;
 
 struct c_quad_ {

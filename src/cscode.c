@@ -27,7 +27,7 @@ static csC_quadlist c_quad_;
 static void c_emsg_(csG_pos pos,char *message,...);
 
 static void c_dec_(csS_table vtab,csS_table ttab,csA_dec foo,csC_fraglist fraglist);
-static void c_locdeclist(csS_table vtab,csS_table ttab,csA_locdeclist list);
+static int c_locdeclist(csS_table vtab,csS_table ttab,csA_locdeclist list);
 static c_info_ c_simplelist_(csS_table vtab,csS_table ttab,csA_simplelist foo,csG_bool emit);
 static c_info_ c_andlist_(csS_table vtab,csS_table ttab,csA_andlist foo,csG_bool emit);
 static c_info_ c_andexpr_(csS_table vtab,csS_table ttab,csA_andexpr foo,csG_bool emit);
@@ -54,7 +54,7 @@ static csC_address c_address_string_(csG_string strconst);
 static csC_address c_address_bool_(csG_bool boolconst);
 static csC_address c_address_env_(csE_enventry eval);
 static csC_address c_address_lable_(csT_label lab);
-static csC_frag c_procfrag_(csC_quadlist body,csF_frame frame,csC_fraglist fraglist);
+static csC_frag c_procfrag_(csC_quadlist body,csF_frame frame,csS_symbol name,csC_fraglist fraglist);
 static c_info_ c_infoconst_(csT_type ty);
 static void c_emitcode_(c_quadkind_ kind,csC_address addr);
 static csC_address c_infotoaddr(c_info_ inf);
@@ -90,6 +90,7 @@ csC_fraglist c_declist_(csS_table val,csS_table type,csA_declist list)
 		c_dec_(val,type,pos,fraglist);
 	return fraglist;
 }
+
 static c_info_ c_consta_(csS_table vtab,csS_table ttab,csA_const c)
 {
 	INITINF(inf);
@@ -115,6 +116,7 @@ static c_info_ c_consta_(csS_table vtab,csS_table ttab,csA_const c)
 	inf.kind = c_const_;
 	return inf;
 }
+
 static void c_dec_(csS_table vtab,csS_table ttab,csA_dec foo,csC_fraglist fraglist)
 {
 	VERIFY(foo);
@@ -181,6 +183,7 @@ static void c_dec_(csS_table vtab,csS_table ttab,csA_dec foo,csC_fraglist fragli
 				}
 			}
 			c_quadlist_();
+			c_emitcode_(csC_entry,c_address_env_(e));
 			csA_locdeclist list = csA_decfunloclist(foo);
 			if (list) c_locdeclist(vtab,ttab,list);
 			csA_stmtlist stmt = csA_decfunstmtlist(foo);
@@ -188,7 +191,7 @@ static void c_dec_(csS_table vtab,csS_table ttab,csA_dec foo,csC_fraglist fragli
 				c_stmtlist_(vtab,ttab,stmt,NULL);
 			csS_endscope(vtab);
 		}
-		c_procfrag_(c_quad_,frame,fraglist);
+		c_procfrag_(c_quad_,frame,name,fraglist);
 		break;
 	}
 	default:
@@ -197,7 +200,7 @@ static void c_dec_(csS_table vtab,csS_table ttab,csA_dec foo,csC_fraglist fragli
 }
 
 
-static void c_locdeclist(csS_table vtab,csS_table ttab,csA_locdeclist list)
+static int c_locdeclist(csS_table vtab,csS_table ttab,csA_locdeclist list)
 {
 	VERIFY(list);
 	csA_locdec pos = NULL;
@@ -220,14 +223,14 @@ static void c_locdeclist(csS_table vtab,csS_table ttab,csA_locdeclist list)
 		e = csE_varentry(ty,access,name);
 		
 		if (list) {
-			c_emitcode_(csC_loadaddr,c_address_env_(e));
+			//c_emitcode_(csC_loadaddr,c_address_env_(e));
 			c_info_ tmp = c_simplelist_(vtab,ttab,list,TRUE);
 			VERIFY(tmp.ty);
 			if (ty != tmp.ty) {
 				c_emsg_(pos->pos,"incompatible types when assigning");
 				VERIFY(0);
 			}
-			c_emitcode_(csC_storel,c_empty_addr_);
+			//c_emitcode_(csC_storel,c_empty_addr_);
 		} else {
 			c_emsg_(pos->pos,"must initialize when assigning");
 		}
@@ -235,6 +238,7 @@ static void c_locdeclist(csS_table vtab,csS_table ttab,csA_locdeclist list)
 		csS_insert(vtab, name, csE_varentry(ty,access,name));
 		varcount++;
 	}
+	return varcount;
 }
 
 static c_info_ c_expr_(csS_table vtab,csS_table ttab,csA_expr foo,csG_bool emit)
@@ -324,11 +328,15 @@ static c_info_ c_stmt_(csS_table vtab,csS_table ttab,csA_stmt pos,csT_label labl
 		}
 		case csA_compoundstmt:{
 			csA_locdeclist list = pos->u.comstmt.varlist;
+			int varcount = 0;
 			if (list)
-				c_locdeclist(vtab,ttab,list);
+				varcount = c_locdeclist(vtab,ttab,list);
 			csA_stmtlist stmt = pos->u.comstmt.stmtlist;
 			if (stmt)
 				c_stmtlist_(vtab,ttab,stmt,lable);
+			if (varcount) {
+				c_emitcode_(csC_ssp,c_address_int_(varcount));
+			}
 			break;
 		}
 		case csA_whilestmt:{
@@ -392,6 +400,7 @@ static c_info_ c_stmt_(csS_table vtab,csS_table ttab,csA_stmt pos,csT_label labl
 					VERIFY(inf.ty);
 				if (inf.ty != c_returnty_)
 					c_emsg_(pos->pos,"return type is wrong");
+				c_emitcode_(csC_prv,c_empty_addr_);
 			}
 			c_emitcode_(csC_ret,c_empty_addr_);
 			break;
@@ -441,8 +450,8 @@ static c_info_ c_andlist_(csS_table vtab,csS_table ttab,csA_andlist foo,csG_bool
 	VERIFY(foo);
 	list_for_each_entry(pos, foo, next) {
 		c_info_ tmp = c_urelexpr_(vtab,ttab,csA_andexprurel(pos),emit);
-		if(tmp.kind == c_empty_)
-			break;
+		//if(tmp.kind == c_empty_)
+		//	break;
 		if (inf.kind != c_empty_) {
 			VERIFY(tmp.ty);VERIFY(inf.ty);
 			if (tmp.ty != csT_typebool() || inf.ty != csT_typebool())
@@ -651,6 +660,7 @@ static c_info_ c_immutable_(csS_table vtab,csS_table ttab,csA_immutable foo,csG_
     	VERIFY(e->kind == csE_fun);
     	int count = 0;
     	csT_type resty = e->u.fun.res;
+    	VERIFY(resty);
     	csT_typelist formals = e->u.fun.formals;
     	t_typelistentry_ pos1 = NULL;
     	csA_expr pos2 = NULL;
@@ -675,6 +685,9 @@ static c_info_ c_immutable_(csS_table vtab,csS_table ttab,csA_immutable foo,csG_
     			c_emsg_(csA_immutpos(foo),"wrong number of arguments at function %s",csS_name(funname));
     	}
     	c_emitcode_(csC_cup,c_address_env_(e));
+    	if (emit)
+    		c_emitcode_(csC_ssp,c_address_int_(-1));
+    	inf.ty = resty;
     	break;
     }
     default:
@@ -802,13 +815,14 @@ static csC_address c_address_lable_(csT_label lab)
 	return addr;
 }
 
-static csC_frag c_procfrag_(csC_quadlist body,csF_frame frame,csC_fraglist fraglist)
+static csC_frag c_procfrag_(csC_quadlist body,csF_frame frame,csS_symbol name,csC_fraglist fraglist)
 {
 	VERIFY(body);VERIFY(frame);VERIFY(fraglist);
 	csC_frag foo = csU_malloc(sizeof(*foo));
 	foo->kind = csC_procfrag;
 	foo->u.proc.body = body;
 	foo->u.proc.frame = frame;
+	foo->name = name;
 	list_add_tail(&foo->next, fraglist);
 	return foo;
 }

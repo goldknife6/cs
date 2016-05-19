@@ -5,6 +5,7 @@
 extern int csM_pc;
 extern int csM_fp;
 extern int csM_sp;
+extern int csM_procp;
 
 static csG_bool v_halt_ = FALSE;
 static void v_mainloop_();
@@ -13,8 +14,10 @@ static csO_code v_curins();
 static csO_value v_add_(csO_value v1,csO_value v2);
 static csO_value v_sub_(csO_value v1,csO_value v2);
 static csO_value v_eq_(csO_value v1,csO_value v2);
+static csO_value v_gt_(csO_value v1,csO_value v2);
 static void v_fjp_(csO_value v,int offset);
 static void v_tjp_(csO_value v,int offset);
+static void v_mark_();
 
 void main(int argc, char *argv[])
 {
@@ -64,9 +67,13 @@ static void v_mainloop_()
 			csM_store_static_value(csM_pop_address(),v);
 			break;
 		case OP_STOREL:
-			VERIFY(0);
+			v = csM_pop_value();
+			csM_store_active_record_value(csM_pop_address(),v);
+			//VERIFY(0);
+			break;
 		case OP_MARK:
-			VERIFY(0);
+			v_mark_();
+			break;
 		case OP_ADD:{
 			csO_value v1 = csM_pop_value();
 			csO_value v2 = csM_pop_value();
@@ -95,8 +102,12 @@ static void v_mainloop_()
 			VERIFY(0);
 		case OP_LQ:
 			VERIFY(0);
-		case OP_GT:
-			VERIFY(0);
+		case OP_GT:{
+			csO_value v2 = csM_pop_value();
+			csO_value v1 = csM_pop_value();
+			csM_push_value(v_gt_(v1,v2));
+			break;
+		}
 		case OP_GQ:
 			VERIFY(0);
 		case OP_FJP:
@@ -111,11 +122,23 @@ static void v_mainloop_()
 			csM_pc += csO_codeval(ins);
 			break;
 		case OP_CUP:
-			VERIFY(0);
+			//fprintf(stderr," %d \n",csM_sp);
+			csM_fp = csM_pop_record();
+			csM_push_record(csM_pc);
+			csM_push_record(csM_procp);
+			//fprintf(stderr, "OP_CUP push pc:%d proc:%d\n", csM_pc,csM_procp);
+			csM_pc = 0;
+			csM_change_proc(csO_codeval(ins)-1);
+			break;
 		case OP_CBP:
 			VERIFY(0);
 		case OP_RET:
-			VERIFY(0);
+			csM_change_proc(csM_pop_record());
+			csM_pc = csM_pop_record();
+			csM_sp = csM_fp;
+			csM_fp = csM_pop_record();
+			//fprintf(stderr, "OP_RET pop pc:%d sp:%d\n", csM_pc,csM_sp);
+			break;
 		case OP_OR:
 			VERIFY(0);
 		case OP_AND:
@@ -124,6 +147,15 @@ static void v_mainloop_()
 			VERIFY(0);
 		case OP_NOT:
 			VERIFY(0);
+		case OP_SSP:
+			csM_sp -= csO_codeval(ins);
+			break;
+		case OP_PRV:
+			v = csM_pop_value();
+			//VERIFY(0);
+			csM_sp = csM_fp;
+			csM_push_value(v);
+			break;
 		default:
 			VERIFY(0);
 		}
@@ -133,7 +165,10 @@ static void v_mainloop_()
 static csO_value v_add_(csO_value v1,csO_value v2)
 {
 	csO_value v;
-	VERIFY(v1.kind == v2.kind);
+	if(v1.kind != v2.kind) {
+		fprintf(stderr, "%d %d\n",v1.kind,v2.kind );
+		VERIFY(0);
+	}
 	if (v1.kind == csO_int_) {
 		v = csO_int_value(v1.u.ival + v2.u.ival);
 		//printf("%d\n", v.u.ival);
@@ -164,6 +199,17 @@ static csO_value v_eq_(csO_value v1,csO_value v2)
 	return v;
 }
 
+static csO_value v_gt_(csO_value v1,csO_value v2)
+{
+	csO_value v;
+	VERIFY(v1.kind == v2.kind);
+	if (v1.kind == csO_int_) {
+		v = csO_bool_value(v1.u.ival > v2.u.ival);
+	} else 
+		VERIFY(0);
+	return v;
+}
+
 static void v_fjp_(csO_value v,int offset)
 {
 	VERIFY(v.kind == csO_bool_);
@@ -176,4 +222,10 @@ static void v_tjp_(csO_value v,int offset)
 	VERIFY(v.kind == csO_bool_);
 	if (v.u.bval)
 		csM_pc += offset;
+}
+
+static void v_mark_()
+{
+	csM_push_record(csM_fp);
+	csM_push_record(csM_sp);
 }

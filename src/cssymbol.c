@@ -124,3 +124,11 @@ void csS_endscope(csS_table tab)
 	tab->top = ele->tab;
 	csU_free(ele);
 } 
+
+csG_bool csS_compare(csS_symbol sym1, csS_symbol sym2)
+{
+	VERIFY(sym1);VERIFY(sym2);
+	if (sym1 == sym2)
+		return TRUE;
+	return FALSE;
+}

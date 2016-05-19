@@ -28,6 +28,8 @@ static char *csO_opnames[NUM_OPCODES+1] = {
 	"AND",
 	"MINUS",
 	"NOT",
+	"SSP",
+	"PRV",
 	NULL	
 };
 

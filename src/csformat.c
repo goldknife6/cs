@@ -20,11 +20,11 @@ csF_format csF_const(csF_fmtvalkind kind,int size,int offset)
 	return foo;
 }
 
-csF_format csF_proc(int size,int offset)
+csF_format csF_proc(int size,int offset,csG_bool main)
 {
 	csF_format foo;
 	foo.f_kind_ = f_prco_;
-	foo.u.f_main_ = 0;
+	foo.u.f_main_ = main;
 	foo.f_size_ = size;
 	foo.f_offset_ = offset;
 	return foo;

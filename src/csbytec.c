@@ -21,7 +21,7 @@ static void b_regin_const_int_(int val,int offset);
 static void b_regin_const_str_(csG_string val,int offset);
 
 
-static void b_regin_proc_(csL_list *head,int size,int offset);
+static void b_regin_proc_(csL_list *head,int size,int offset,csG_bool main);
 static int b_genproc_(csC_quadlist body,csL_list *head);
 static csB_codelist b_addcodelist(csO_code code,csL_list *head);
 static void b_addlablelist(csB_codelist code,csT_label lab,int offset,csL_list *head);
@@ -60,8 +60,13 @@ static void b_regin_(csC_fraglist fraglist)
 			csC_quadlist body = o_pos_->u.proc.body;
 			VERIFY(body);
 			VERIFY(frame);
+			csS_symbol name = o_pos_->name;
+			VERIFY(name);
+			csG_bool main = FALSE;
+			if (csS_compare(name, csS_mksymbol("main")))
+				main = TRUE;
 			int count = b_genproc_(body,prochead);
-			b_regin_proc_(prochead,count*sizeof(csO_code),frame->offset);
+			b_regin_proc_(prochead,count*sizeof(csO_code),frame->offset,main);
 			break;
 		}
 		case csC_strfrag: {
@@ -133,15 +138,16 @@ static void b_bytecode_(FILE *outs)
 			default:
 				VERIFY(0);	
 			}
+			//csF_printfmt(format);
 			break;
 		}
 		case f_prco_:{
-			format = csF_proc(o_pos_->size,o_pos_->offset);
+			format = csF_proc(o_pos_->size,o_pos_->offset,o_pos_->u.fun.main);
 			fwrite(&format, sizeof(format), 1, outs);
-			VERIFY(o_pos_->u.head);
+			VERIFY(o_pos_->u.fun.head);
 			csB_codelist p_code_;
 			csO_code code;
-			list_for_each_entry(p_code_, o_pos_->u.head, next) {
+			list_for_each_entry(p_code_, o_pos_->u.fun.head, next) {
 				code = p_code_->code;
 				csO_printcode(code);
 				fwrite(&code, sizeof(code), 1, outs);
@@ -164,6 +170,7 @@ static void b_bytecode_(FILE *outs)
 			default:
 				VERIFY(0);	
 			}
+			//csF_printfmt(format);
 			break;
 		}
 		default:
@@ -188,6 +195,10 @@ static int b_genproc_(csC_quadlist body,csL_list *head)
 	list_for_each_entry(p_pos_, body, next) {
 		csC_address addr = p_pos_->arg;
 		switch (p_pos_->kind) {
+		case csC_entry:
+			
+			continue;
+			break;
 		case csC_mark:
 			code = csO_mkcode(OP_MARK,0);
 			b_addcodelist(code,head);
@@ -300,12 +311,29 @@ static int b_genproc_(csC_quadlist body,csL_list *head)
 			code = csO_mkcode(OP_ADD,0);
 			b_addcodelist(code,head);
 			break;
+		case csC_sub:
+			code = csO_mkcode(OP_SUB,0);
+			b_addcodelist(code,head);
+			break;
 		case csC_minus:
 			code = csO_mkcode(OP_MINUS,0);
 			b_addcodelist(code,head);
 			break;
 		case csC_eq:
 			code = csO_mkcode(OP_EQ,0);
+			b_addcodelist(code,head);
+			break;
+		case csC_gt:
+			code = csO_mkcode(OP_GT,0);
+			b_addcodelist(code,head);
+			break;
+		case csC_ssp:
+			VERIFY(addr.kind == csC_intconst);
+			code = csO_mkcode(OP_SSP,addr.u.ival);
+			b_addcodelist(code,head);
+			break;
+		case csC_prv:
+			code = csO_mkcode(OP_PRV,0);
 			b_addcodelist(code,head);
 			break;
 		default:
@@ -483,14 +511,15 @@ static void b_regin_const_str_(csG_string val,int offset)
 	list_add_tail(&foo->next, &b_regin_head_);
 }
 
-static void b_regin_proc_(csL_list *head,int size,int offset)
+static void b_regin_proc_(csL_list *head,int size,int offset,csG_bool main)
 {
 	VERIFY(offset);
 	csB_regin foo = csU_malloc(sizeof(*foo));
 	foo->kind = f_prco_;
 	foo->offset = offset;
 	foo->size = size;
-	foo->u.head = head;
+	foo->u.fun.head = head;
+	foo->u.fun.main = main;
 	INIT_LIST_HEAD(&foo->next);
 	list_add_tail(&foo->next, &b_regin_head_);
 }

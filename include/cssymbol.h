@@ -16,4 +16,5 @@ extern void 		csS_tabfree(csS_table t);
 extern void 		csS_beginscope(csS_table tab);
 extern void 		csS_endscope(csS_table tab);
 extern void*		csS_looktop(csS_table tab, csS_symbol sym);
+extern csG_bool		csS_compare(csS_symbol sym1, csS_symbol sym2);
 #endif/*!CS_SYMBOL_H*/

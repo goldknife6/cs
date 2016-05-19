@@ -53,6 +53,9 @@ static void c_printquad(csC_quad quad)
 	VERIFY(quad);
 
 	switch (quad->kind) {
+	case csC_entry:
+		fprintf(debugs, "entry ");
+		break;
 	case csC_load:
 		fprintf(debugs, "load ");
 		break;
@@ -127,6 +130,12 @@ static void c_printquad(csC_quad quad)
 		break;
 	case csC_not:
 		fprintf(debugs, "not ");
+		break;
+	case csC_ssp:
+		fprintf(debugs, "ssp ");
+		break;
+	case csC_prv:
+		fprintf(debugs, "prv");
 		break;
  	default:
 		VERIFY(0);
