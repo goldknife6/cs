@@ -23,7 +23,7 @@ typedef struct {
 } csO_file;
 
 typedef struct csO_object {
-  enum {csO_string_,csO_file_,csO_null_}kind;
+  enum {csO_string_,csO_file_}kind;
   csO_gcheader header;
   union {
     csO_string sval;
