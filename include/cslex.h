@@ -11,7 +11,7 @@ typedef enum {
 		/*+			-			*		/			==  !=  < <=  > >=  &   |    =		*/
 		csL_IF,csL_ELSE,csL_WHILE,csL_FOR,csL_BREAK,csL_DEF,csL_TRUE/*true*/,csL_FALSE/*false*/,csL_RETURN,csL_VAR,
 		/* reserved words */
-		csL_ENDFILE,csL_ERROR
+		csL_ENDFILE,csL_ERROR,csL_NULL
 } csL_tokkind;
 
 typedef struct {

@@ -245,7 +245,7 @@ extern csS_symbol csA_mutid(csA_mutable foo);
 struct a_const_ {
 	csG_pos pos;
 	enum {
-		csA_cnum_,csA_cchar_,csA_cstr_,csA_cbool_
+		csA_cnum_,csA_cchar_,csA_cstr_,csA_cbool_,csA_cnull_
 	} kind;
 	union {
 		int val; 	// NUM CHAR true false
@@ -261,7 +261,7 @@ struct a_immutable_ {
 	csG_pos pos;
 	enum {
 		csA_expr_,csA_call_,csA_num_,csA_char_,
-		csA_str_,csA_bool_
+		csA_str_,csA_bool_,csA_null_
 	} kind;
 	union {
 		int val; 	// NUM CHAR true false

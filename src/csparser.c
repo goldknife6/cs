@@ -190,7 +190,7 @@ loop:
 	case csL_NOT:case csL_MINUS:case csL_LPAREN:
 	case csL_LBRACK:case csL_NUM:case csL_CHAR:
 	case csL_TRUE:case csL_FALSE:case csL_STRING:
-	case csL_ID:case csL_DOLLAR:
+	case csL_ID:case csL_DOLLAR:case csL_NULL:
 		if (!foo) foo = csA_mkexprlist();
 		bar = p_expr_();
 		if (bar) csA_exprlistadd(foo,bar);
@@ -222,7 +222,7 @@ static csA_expr p_expr_(void)
 	case csL_NOT:case csL_MINUS:case csL_LPAREN:
 	case csL_LBRACK:case csL_NUM:case csL_CHAR:
 	case csL_TRUE:case csL_FALSE:case csL_STRING:
-	case csL_ID:
+	case csL_ID:case csL_NULL:
 		if (!foo) foo = csA_mkexpr();
 		bar = p_simplelist_();
 		VERIFY(bar);
@@ -293,6 +293,10 @@ static csA_const p_const_(void)
 		foo->u.val = FALSE;
 		MATCH(csL_FALSE,"missing boolconst",sync);
 		break;
+	case csL_NULL:
+		foo->kind = csA_cnull_;
+		MATCH(csL_NULL,"missing null",sync);
+		break;
 	default:
 		VERIFY(0);
 	}
@@ -306,6 +310,10 @@ static csA_immutable p_immutable_(void)
 	csA_immutable foo = csA_mkimmut();
 	csG_pos pos = token.pos;
 	switch (token.kind) {
+	case csL_NULL:
+		foo->kind = csA_null_;
+		MATCH(csL_NULL,"missing null",sync);
+		break;
 	case csL_NUM:
 		csA_setimmutnum(foo,csL_tokennum(token));
 		MATCH(csL_NUM,"missing numconst",sync);
@@ -364,7 +372,7 @@ static csA_factor p_factor_(void)
 		break;
 	case csL_LPAREN:case csL_LBRACK:
 	case csL_NUM:case csL_CHAR:case csL_STRING:
-	case csL_TRUE:case csL_FALSE:
+	case csL_TRUE:case csL_FALSE:case csL_NULL:
 		immut = p_immutable_();
 		VERIFY(immut);
 		csA_setfactorimmut(foo,immut);
@@ -420,6 +428,7 @@ loop:
 	case csL_MINUS:case csL_LPAREN:case csL_LBRACK:
 	case csL_NUM:case csL_CHAR:case csL_STRING:
 	case csL_TRUE:case csL_FALSE:case csL_ID:
+	case csL_NULL:
 		if (!foo) foo = csA_mktermlist();
 		pos = token.pos;
 		bar = p_term_();
@@ -525,6 +534,7 @@ loop:
 	case csL_MINUS:case csL_LPAREN:case csL_LBRACK:
 	case csL_NUM:case csL_CHAR:case csL_STRING:
 	case csL_TRUE:case csL_FALSE:case csL_ID:
+	case csL_NULL:
 		if (!foo) foo = csA_mksumexprlist();
 		bar = p_sumexpr_();
 		VERIFY(bar);
@@ -567,7 +577,7 @@ loop:
 	case csL_NOT:case csL_MINUS:case csL_LPAREN:
 	case csL_LBRACK:case csL_NUM:case csL_CHAR:
 	case csL_TRUE:case csL_FALSE:case csL_STRING:
-	case csL_ID:
+	case csL_ID:case csL_NULL:
 		if (!foo) foo = csA_mkandlist();
 		pos = token.pos;
 		bar = p_andexpr_();
@@ -610,7 +620,7 @@ loop:
 	case csL_NOT:case csL_MINUS:case csL_LPAREN:
 	case csL_LBRACK:case csL_NUM:case csL_CHAR:
 	case csL_TRUE:case csL_FALSE:case csL_STRING:
-	case csL_ID:
+	case csL_ID:case csL_NULL:
 		if (!foo) foo = csA_mksimplelist();
 		pos = token.pos;
 		bar = p_simpleexpr_();
@@ -700,7 +710,7 @@ static csA_stmt p_stmt_(void)
 	case csL_DOLLAR:case csL_NOT:case csL_MINUS:
 	case csL_LPAREN:case csL_LBRACK:case csL_NUM:
 	case csL_CHAR:case csL_TRUE:case csL_FALSE:
-	case csL_STRING:case csL_ID: {
+	case csL_STRING:case csL_ID:case csL_NULL: {
 		foo = csA_mkstmt();
 		foo->pos = pos;
 		csA_exprlist list = p_exprlist_();

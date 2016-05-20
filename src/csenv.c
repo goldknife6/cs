@@ -31,6 +31,8 @@ csS_table csE_baseval(void)
 	csS_table foo = csS_empty(e_free_);
 	e_buildin_(foo,"_buildin_printint_",csT_typevoid(),csT_typeint(),1);
 	e_buildin_(foo,"_buildin_printstring_",csT_typevoid(),csT_typestring(),2);
+	e_buildin_(foo,"_buildin_openfile_",csT_typefile(),csT_typestring(),3);
+	e_buildin_(foo,"_buildin_readfile_",csT_typestring(),csT_typefile(),4);
 	return foo;
 }
 
@@ -41,6 +43,7 @@ csS_table csE_basetype(void)
 	csS_insert(foo,csS_mksymbol("bool"), csT_typebool());
 	csS_insert(foo,csS_mksymbol("string"), csT_typestring());
 	csS_insert(foo,csS_mksymbol("void"), csT_typevoid());
+	csS_insert(foo,csS_mksymbol("file"), csT_typefile());
 	return foo;
 }
 
@@ -77,6 +80,7 @@ csT_type csE_varty(csE_enventry foo)
 	VERIFY(foo->kind == csE_var);
 	return foo->u.var.type;
 }
+
 csF_access csE_varaccess(csE_enventry foo)
 {
 	VERIFY(foo);

@@ -30,6 +30,7 @@ static char *csO_opnames[NUM_OPCODES+1] = {
 	"NOT",
 	"SSP",
 	"PRV",
+	"LOADN",
 	NULL	
 };
 

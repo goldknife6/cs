@@ -258,6 +258,10 @@ static int b_genproc_(csC_quadlist body,csL_list *head)
 			}
 			b_addcodelist(code,head);
 			break;
+		case csC_loadnull:
+			code = csO_mkcode(OP_LOADN,0);
+			b_addcodelist(code,head);
+			break;
 		case csC_loadaddr:
 			if (addr.kind == csC_env) {
 				csE_enventry eval = addr.u.eval;

@@ -21,21 +21,21 @@ def print_int(int v) void {
 	return;
 }
 
-def main() void {
-	$a = [10]fib;
-	/*
-	while(bbb)
-	{
-		var int a = 0;
-		//$a = [10]fib + [10]fib + [10]fib;
-		$a = a * 10;
-		if (a != 0)
-			break;
-	}*/
-	for (;a < 1111000; $a = a + 1) {
-		[a]print_int;
-		["aaaa"+" bbbbbb"+"a\n"]print_string;
+def open(string filename) file {
+	return [filename]_buildin_openfile_;
+}
 
-	}
+def read(file file) string {
+	return [file]_buildin_readfile_;
+}
+
+def main() void {
+	var file f = null;
+	var string con = "";
+	$a = [0]fib;
+	$f = ["main.c"]open;
+	$con = [f]read;
+
+	[con]print_string;
 	return;
 }

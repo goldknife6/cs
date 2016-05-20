@@ -32,6 +32,7 @@ struct c_address_ {
 
 typedef enum {
 	csC_load,//load constant,static variable,local variable
+	csC_loadnull,
 	csC_loadaddr,//load address
 	csC_stores,//store top to address below top & pop both
 	csC_storel,//store top to address below top & pop both

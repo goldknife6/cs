@@ -23,6 +23,7 @@ static void v_mark_();
 static void v_cbp_(int cnum);
 static void v_ret_();
 static void v_lt_();
+static void v_prv_();
 
 void main(int argc, char *argv[])
 {
@@ -50,17 +51,20 @@ static void v_mainloop_()
 		switch (csO_codeop(ins)) {
 		case OP_LOADC:
 			v = csM_const_value(csO_codeval(ins));
-			VERIFY(v.kind != csO_empty_);
+			VERIFY(v.kind != csO_null_);
 			csM_push_value(v);
+			break;
+		case OP_LOADN:
+			csM_push_value(csM_null_value());
 			break;
 		case OP_LOADS:
 			v = csM_static_value(csO_codeval(ins));
-			VERIFY(v.kind != csO_empty_);
+			VERIFY(v.kind != csO_null_);
 			csM_push_value(v);
 			break;
 		case OP_LOADL:
 			v = csM_active_record_value(csO_codeval(ins));
-			VERIFY(v.kind != csO_empty_);
+			//VERIFY(v.kind != csO_null_);
 			csM_push_value(v);
 			break;
 		case OP_LOADA:
@@ -68,7 +72,7 @@ static void v_mainloop_()
 			break;
 		case OP_STORES:
 			v = csM_pop_value();
-			VERIFY(v.kind != csO_empty_);
+			VERIFY(v.kind != csO_null_);
 			csM_store_static_value(csM_pop_address(),v);
 			break;
 		case OP_STOREL:
@@ -162,15 +166,19 @@ static void v_mainloop_()
 			csM_sp -= csO_codeval(ins);
 			break;
 		case OP_PRV:
-			v = csM_pop_value();
-			//VERIFY(0);
-			csM_sp = csM_fp;
-			csM_push_value(v);
+			v_prv_();
 			break;
 		default:
 			VERIFY(0);
 		}
 	}
+}
+
+static void v_prv_()
+{
+	csO_value v = csM_pop_value();;
+	csM_sp = csM_fp;
+	csM_push_value(v);
 }
 
 static csO_value v_add_(csO_value v1,csO_value v2)
@@ -216,10 +224,15 @@ static csO_value v_mul_(csO_value v1,csO_value v2)
 static csO_value v_eq_(csO_value v1,csO_value v2)
 {
 	csO_value v;
-	VERIFY(v1.kind == v2.kind);
-	if (v1.kind == csO_int_) {
+	if (v1.kind == csO_obj_ && v2.kind == csO_null_)
+		v = csO_bool_value(FALSE);
+	if (v2.kind == csO_obj_ && v1.kind == csO_null_)
+		v = csO_bool_value(FALSE);
+	else if (v1.kind == csO_int_) {
 		v = csO_bool_value(v1.u.ival == v2.u.ival);
-	} else 
+	} else if (v1.kind == csO_null_) {
+		v = csO_bool_value(TRUE);
+	} else
 		VERIFY(0);
 	return v;
 }
@@ -227,10 +240,15 @@ static csO_value v_eq_(csO_value v1,csO_value v2)
 static csO_value v_neq_(csO_value v1,csO_value v2)
 {
 	csO_value v;
-	VERIFY(v1.kind == v2.kind);
-	if (v1.kind == csO_int_) {
+	if (v1.kind == csO_obj_ && v2.kind == csO_null_)
+		v = csO_bool_value(TRUE);
+	if (v2.kind == csO_obj_ && v1.kind == csO_null_)
+		v = csO_bool_value(TRUE);
+	else if (v1.kind == csO_int_) {
 		v = csO_bool_value(v1.u.ival != v2.u.ival);
-	} else 
+	} else if (v1.kind == csO_null_) {
+		v = csO_bool_value(FALSE);
+	} else
 		VERIFY(0);
 	return v;
 }
@@ -296,7 +314,7 @@ static void v_cbp_(int cnum)
 	csM_fp = csM_pop_record();
 	csM_push_record(csM_pc);
 	csM_push_record(csM_procp);
-
+	static char buffer[100];
 	switch (cnum) {
 	case 1:
 		v = csM_pop_value();
@@ -307,6 +325,24 @@ static void v_cbp_(int cnum)
 		obj = csM_pop_object();
 		csO_pobject(obj);
 		//printf("\n");
+		break;
+	case 3:
+		obj = csM_pop_object();
+		VERIFY(obj->kind == csO_string_);
+		obj = csF_file(obj->u.sval.s);
+		if (obj)
+			csM_push_object(obj);
+		else
+			csM_push_value(csM_null_value());
+		v_prv_();
+		break;
+	case 4:
+		obj = csM_pop_object();
+		VERIFY(obj->kind == csO_file_);
+		fread(buffer, 100, 1, obj->u.fval.f);
+		obj = csS_string(buffer,100);
+		csM_push_object(obj);
+		v_prv_();
 		break;
 	default:
 		VERIFY(0);

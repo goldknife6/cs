@@ -3,29 +3,36 @@
 #include "csglobal.h"
 #include "cslist.h"
 
+#include <stdio.h>
+
 typedef struct csO_gcheader {
   csL_list next;
   csG_bool marked;
 } csO_gcheader;
 
 typedef struct {
-	char *s;
-	size_t size;
+  char *s;
+  size_t size;
   csG_bool write;
   unsigned long hashval;
   csL_hlistn hash;
 } csO_string;
 
+typedef struct {
+  FILE *f;
+} csO_file;
+
 typedef struct csO_object {
-  enum {csO_string_}kind;
+  enum {csO_string_,csO_file_}kind;
   csO_gcheader header;
   union {
     csO_string sval;
+    csO_file fval;
   } u;
 } *csO_object;
 
 typedef struct csO_value {
-  enum {csO_empty_,csO_addr_,csO_int_,csO_bool_,csO_obj_}kind;
+  enum {csO_null_,csO_addr_,csO_int_,csO_bool_,csO_obj_}kind;
   union {
     int ival;
     int addr;
@@ -41,5 +48,6 @@ extern csO_object csO_string_object(char * val,size_t size);
 extern void csO_pobject(csO_object obj);
 
 extern csO_object csS_string(char *src,int size);
+extern csO_object csF_file(char *filename);
 extern csO_object csO_empty_object();
 #endif/*!CS_OBJECT_H*/

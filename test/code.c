@@ -59,6 +59,9 @@ static void c_printquad(csC_quad quad)
 	case csC_load:
 		fprintf(debugs, "load ");
 		break;
+	case csC_loadnull:
+		fprintf(debugs, "loadnull ");
+		break;
 	case csC_loadaddr:
 		fprintf(debugs, "loadaddr ");
 		break;

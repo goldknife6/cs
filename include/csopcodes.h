@@ -9,7 +9,7 @@
 *	`B' : 16 bits
 *	`Bx' : signed 24 bits
 */
-#define NUM_OPCODES 28
+#define NUM_OPCODES 29
 /*
 ** R(x) - register
 ** Cons(x) - constant (in constant regin)
@@ -56,6 +56,7 @@ typedef enum {
 	OP_NOT,
 	OP_SSP,
 	OP_PRV,
+	OP_LOADN,/*load null*/
 } csO_opcode;
 extern void csO_printcode(csO_code code);
 extern csO_byte csO_codeop(csO_code code);

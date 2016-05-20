@@ -18,11 +18,15 @@ void csT_typelistadd(csT_typelist head,csT_type type)
 	head->count++;
 }
 
-csG_bool CStypeEqual(csT_type foo,csT_type bar)
+csG_bool CStypeEqual(csT_type t1,csT_type t2)
 {
-	VERIFY(foo);
-	VERIFY(bar);
-	if (foo == bar)
+	VERIFY(t1);
+	VERIFY(t2);
+	if (t1 == t2)
+		return TRUE;
+	else if (t1 == csT_typefile() && t2 == csT_typevoid())
+		return TRUE;
+	else if (t1 == csT_typevoid() && t2 == csT_typefile())
 		return TRUE;
 	return FALSE;
 }
@@ -54,6 +58,16 @@ csT_type csT_typestring(void)
 	if (!foo) {
 		foo = csU_malloc(sizeof(*foo));
 		foo->kind = csT_string;
+	}
+	return foo;
+}
+
+csT_type csT_typefile(void)
+{
+	static csT_type foo = NULL;
+	if (!foo) {
+		foo = csU_malloc(sizeof(*foo));
+		foo->kind = csT_file;
 	}
 	return foo;
 }

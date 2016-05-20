@@ -12,7 +12,7 @@ typedef struct t_typelist_  *csT_typelist;
 struct t_type_ {
 	enum {
 		csT_record, csT_int, csT_string,
-		csT_array,csT_bool, csT_void
+		csT_array,csT_bool, csT_void,csT_file
 	} kind;
 	union {
 		csT_fieldlist record;
@@ -44,10 +44,12 @@ struct t_typelist_ {
 	csL_list head;
 	int count;
 };
+extern csG_bool CStypeEqual(csT_type t1,csT_type t2);
 extern csT_typelist csT_mktypelist();
 extern void csT_typelistadd(csT_typelist head,csT_type type);
 extern csT_type csT_typeint(void);
 extern csT_type csT_typebool(void);
 extern csT_type csT_typestring(void);
 extern csT_type csT_typevoid(void);
+extern csT_type csT_typefile(void);
 #endif/*!CS_TYPES_H*/

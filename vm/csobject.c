@@ -14,7 +14,6 @@ csO_object csO_empty_object()
 {
 	csO_object foo = malloc(sizeof(*foo));
 	o_initheader_(&foo->header);
-	foo->kind = csO_empty_;
 	return foo;
 }
 
@@ -28,8 +27,6 @@ csO_object csO_string_object_add(csO_object s1,csO_object s2)
 	size_t size = s1->u.sval.size + s2->u.sval.size;
 	VERIFY(size < 1024);
 	sprintf(buffer, "%s%s",s1->u.sval.s,s2->u.sval.s);
-	//fprintf(stderr, "%s%s",s1->u.sval.s,s1->u.sval.s);
-	//VERIFY(0);
 	return csS_string(buffer,size);
 }
 
@@ -38,7 +35,7 @@ void csO_pobject(csO_object obj)
 	VERIFY(obj);
 	switch (obj->kind) {
 	case csO_string_:
-		printf("%s", obj->u.sval.s);
+		fprintf(stdout,"%s", obj->u.sval.s);
 		break;
 	default:
 		VERIFY(0);

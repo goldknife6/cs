@@ -50,4 +50,6 @@ extern void csM_push_address(int addr);
 extern int csM_pop_address(void);
 
 extern void csM_load_bytecode(FILE *in);
+
+extern csO_value csM_null_value();
 #endif/*!CS_MEMORY_H*/

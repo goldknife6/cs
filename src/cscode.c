@@ -223,14 +223,12 @@ static int c_locdeclist(csS_table vtab,csS_table ttab,csA_locdeclist list)
 		e = csE_varentry(ty,access,name);
 		
 		if (list) {
-			//c_emitcode_(csC_loadaddr,c_address_env_(e));
 			c_info_ tmp = c_simplelist_(vtab,ttab,list,TRUE);
 			VERIFY(tmp.ty);
 			if (ty != tmp.ty) {
-				c_emsg_(pos->pos,"incompatible types when assigning");
-				VERIFY(0);
+				if (ty != csT_typefile() && tmp.ty != csT_typevoid())
+					c_emsg_(pos->pos,"incompatible types when assigning");
 			}
-			//c_emitcode_(csC_storel,c_empty_addr_);
 		} else {
 			c_emsg_(pos->pos,"must initialize when assigning");
 		}
@@ -488,12 +486,12 @@ static c_info_ c_relexpr_(csS_table vtab,csS_table ttab,csA_relexpr foo,csG_bool
 	if (op) {
 		csA_sumexprlist list2 = csA_relexprsum2(foo);
 		c_info_ inf2 = c_sumexprlist_(vtab,ttab,list2,emit);
-		if (inf1.ty != inf2.ty) {
-			c_emsg_(foo->pos,"invalid operands to binary sumexpr");
+		if (!CStypeEqual(inf1.ty,inf2.ty)) {
+			c_emsg_(foo->pos,"invalid operands to binary sumexpr1");
 			inf1.kind = c_empty_;
 			return inf1;
-		} else if (inf1.ty != csT_typeint()) {
-			c_emsg_(foo->pos,"invalid operands to binary sumexpr");
+		} else if (inf1.ty != csT_typeint() && inf1.ty != csT_typevoid() && inf1.ty != csT_typefile()) {
+			c_emsg_(foo->pos,"invalid operands to binary sumexpr2");
 			inf1.kind = c_empty_;
 			return inf1;
 		}
@@ -633,6 +631,11 @@ static c_info_ c_immutable_(csS_table vtab,csS_table ttab,csA_immutable foo,csG_
     	break;
     case csA_char_:
     	VERIFY(0);
+    	break;
+    case csA_null_:
+    	inf.ty = csT_typevoid();
+    	if (emit)
+    		c_emitcode_(csC_loadnull,c_empty_addr_);
     	break;
     case csA_str_:
     	inf.kind = c_const_;

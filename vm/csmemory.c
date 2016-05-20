@@ -62,6 +62,14 @@ csO_value csM_const_value(int offset)
 	return v;
 }
 
+csO_value csM_null_value()
+{
+	csO_value v;
+	v.kind = csO_null_;
+	return v;
+}
+
+
 csO_value csM_static_value(int offset)
 {
 	csO_value v;
@@ -106,7 +114,7 @@ csO_value csM_pop_value(void)
 
 void csM_push_value(csO_value v)
 {
-	VERIFY(v.kind != csO_empty_);
+	//VERIFY(v.kind != csO_null_);
 	VERIFY(csM_sp < STACK_REGIN_MAX);
 	csM_stack_regin[csM_sp++] = v;
 }
@@ -142,7 +150,6 @@ csO_value csM_active_record_value(int offset)
 void csM_store_active_record_value(int offset,csO_value v)
 {
 	VERIFY(offset > 0);
-	VERIFY(v.kind != csO_empty_);
 	VERIFY(csM_fp + offset - 1 < STACK_REGIN_MAX);
 	VERIFY(csM_fp + offset - 1 >= 0);
 	csM_stack_regin[csM_fp + offset - 1] = v;
@@ -220,7 +227,7 @@ void csM_load_bytecode(FILE *in)
 			default:
 				VERIFY(0);
 			}
-			VERIFY(csM_static_regin[offset-1].kind == csO_empty_);
+			VERIFY(csM_static_regin[offset-1].kind == csO_null_);
 			csM_static_regin[offset-1] = v;
 			break;
 		case f_prco_: {
@@ -258,7 +265,7 @@ void csM_load_bytecode(FILE *in)
 			default:
 				VERIFY(0);
 			}
-			VERIFY(csM_const_regin[offset-1].kind == csO_empty_);
+			VERIFY(csM_const_regin[offset-1].kind == csO_null_);
 			csM_const_regin[offset-1] = v;
 			break;
 		default:
@@ -274,9 +281,4 @@ static void m_printheader_(csF_fmtheader header)
 	fprintf(stdout, "staticsize:%d\n",header.staticsize);
 	fprintf(stdout, "constsize:%d\n",header.constsize);
 	fprintf(stdout, "procsize:%d\n",header.procsize);
-}
-
-static void m_printregin_()
-{
-
 }

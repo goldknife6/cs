@@ -277,6 +277,7 @@ static void keyinit()
 	csH_tabinsert(keytab, "false", (void*)csL_FALSE);
 	csH_tabinsert(keytab, "return", (void*)csL_RETURN);
 	csH_tabinsert(keytab, "var", (void*)csL_VAR);
+	csH_tabinsert(keytab, "null", (void*)csL_NULL);
 }
 
 static csL_tokkind keylookup(char *s) 
