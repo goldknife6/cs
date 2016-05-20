@@ -8,19 +8,18 @@ static void e_free_(void *key,void *val)
 
 }
 
-static void e_buildin_(csS_table vtab,csG_string name,csT_type retty,csT_type formalsty,int offset)
+static void e_buildin_(csS_table vtab,csG_string name,csT_type retty,csT_typelist formalsty,int offset)
 {
 	VERIFY(name);VERIFY(vtab);
 	VERIFY(retty);VERIFY(formalsty);
 	csS_symbol s = csS_mksymbol(name);
 	csE_enventry foo = csU_malloc(sizeof(*foo));
-	csT_typelist formals = csT_mktypelist();
-	csT_typelistadd(formals,formalsty);
-
+//csT_typelist csT_mktypelist()
+//csT_typelistadd(csT_typelist head,csT_type type)
 	foo->kind = csE_fun;
 	foo->u.fun.buildin = TRUE;
 	foo->u.fun.res = retty;
-	foo->u.fun.formals = formals;
+	foo->u.fun.formals = formalsty;
 	foo->name = s;
 	foo->u.fun.frame = csF_buildin_frame(offset);
 	csS_insert(vtab,s,foo);
@@ -29,10 +28,20 @@ static void e_buildin_(csS_table vtab,csG_string name,csT_type retty,csT_type fo
 csS_table csE_baseval(void)
 {
 	csS_table foo = csS_empty(e_free_);
-	e_buildin_(foo,"_buildin_printint_",csT_typevoid(),csT_typeint(),1);
-	e_buildin_(foo,"_buildin_printstring_",csT_typevoid(),csT_typestring(),2);
-	e_buildin_(foo,"_buildin_openfile_",csT_typefile(),csT_typestring(),3);
-	e_buildin_(foo,"_buildin_readfile_",csT_typestring(),csT_typefile(),4);
+	csT_typelist list = csT_mktypelist();
+	csT_typelistadd(list,csT_typeint());
+	e_buildin_(foo,"_buildin_printint_",csT_typevoid(),list,1);
+	list = csT_mktypelist();
+	csT_typelistadd(list,csT_typestring());
+	e_buildin_(foo,"_buildin_printstring_",csT_typevoid(),list,2);
+	list = csT_mktypelist();
+	csT_typelistadd(list,csT_typestring());
+	e_buildin_(foo,"_buildin_openfile_",csT_typefile(),list,3);
+	list = csT_mktypelist();
+	csT_typelistadd(list,csT_typestring());
+	csT_typelistadd(list,csT_typeint());
+	csT_typelistadd(list,csT_typefile());
+	e_buildin_(foo,"_buildin_readfile_",csT_typeint(),list,4);
 	return foo;
 }
 

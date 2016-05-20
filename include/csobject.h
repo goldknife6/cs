@@ -23,7 +23,7 @@ typedef struct {
 } csO_file;
 
 typedef struct csO_object {
-  enum {csO_string_,csO_file_}kind;
+  enum {csO_string_,csO_file_,csO_null_}kind;
   csO_gcheader header;
   union {
     csO_string sval;
@@ -47,7 +47,9 @@ extern csO_object csO_string_object_add(csO_object s1,csO_object s2);
 extern csO_object csO_string_object(char * val,size_t size);
 extern void csO_pobject(csO_object obj);
 
+extern csO_object csS_string_empty(int size);
 extern csO_object csS_string(char *src,int size);
+extern char* csS_string_extend(csO_object string,size_t size);
 extern csO_object csF_file(char *filename);
 extern csO_object csO_empty_object();
 #endif/*!CS_OBJECT_H*/

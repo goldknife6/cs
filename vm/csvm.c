@@ -185,7 +185,7 @@ static csO_value v_add_(csO_value v1,csO_value v2)
 {
 	csO_value v;
 	if(v1.kind != v2.kind) {
-		fprintf(stderr, "%d %d\n",v1.kind,v2.kind );
+		fprintf(stderr, "%d %d\n",v1.kind,v2.kind);
 		VERIFY(0);
 	}
 	if (v1.kind == csO_int_) {
@@ -336,14 +336,24 @@ static void v_cbp_(int cnum)
 			csM_push_value(csM_null_value());
 		v_prv_();
 		break;
-	case 4:
-		obj = csM_pop_object();
-		VERIFY(obj->kind == csO_file_);
-		fread(buffer, 100, 1, obj->u.fval.f);
-		obj = csS_string(buffer,100);
-		csM_push_object(obj);
-		v_prv_();
+	case 4:{
+		csO_object file,string;
+		file = csM_pop_object();
+		VERIFY(file->kind == csO_file_);
+		v = csM_pop_value();
+		VERIFY(v.kind == csO_int_);
+		csO_value vs = csM_pop_value();
+		if (vs.kind == csO_obj_) {
+			string = vs.u.gc;
+			VERIFY(string);
+			char *s = csS_string_extend(string,v.u.ival);
+			int a = fread(s,1, v.u.ival, file->u.fval.f);
+			v.u.ival = a;
+			csM_push_value(v);
+			v_prv_();
+		} else VERIFY(0);
 		break;
+	}
 	default:
 		VERIFY(0);
 	}

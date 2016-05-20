@@ -14,21 +14,10 @@ csO_object csO_empty_object()
 {
 	csO_object foo = malloc(sizeof(*foo));
 	o_initheader_(&foo->header);
+	memset(foo,0,sizeof(*foo));
 	return foo;
 }
 
-csO_object csO_string_object_add(csO_object s1,csO_object s2)
-{
-	static char buffer[1024];
-	VERIFY(s1);
-	VERIFY(s2);
-	VERIFY(s1->kind == csO_string_);
-	VERIFY(s2->kind == csO_string_);
-	size_t size = s1->u.sval.size + s2->u.sval.size;
-	VERIFY(size < 1024);
-	sprintf(buffer, "%s%s",s1->u.sval.s,s2->u.sval.s);
-	return csS_string(buffer,size);
-}
 
 void csO_pobject(csO_object obj)
 {

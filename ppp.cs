@@ -25,17 +25,21 @@ def open(string filename) file {
 	return [filename]_buildin_openfile_;
 }
 
-def read(file file) string {
-	return [file]_buildin_readfile_;
+def read(string buff,int size,file file) int {
+	return [buff,size,file]_buildin_readfile_;
 }
 
 def main() void {
 	var file f = null;
-	var string con = "";
-	$a = [0]fib;
+	var string con = "null";
 	$f = ["main.c"]open;
-	$con = [f]read;
-
-	[con]print_string;
+	if (f != null) {
+		$a = [con,10000,f]read;
+		[con + "\n"]print_string;
+		[a]print_int;
+	} else {
+		["can't open"]print_string;
+	}
+	
 	return;
 }
